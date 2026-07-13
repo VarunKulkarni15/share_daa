@@ -19,8 +19,10 @@ const getFileIconSrc = (filename) => {
   if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) return '/icon-video.png';
   if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) return '/icon-audio.png';
   if (['png', 'jpg', 'jpeg', 'gif', 'svg'].includes(ext)) return '/icon-video.png'; // No image icon, using video as fallback
-  return '/icon-code.png'; 
+  return '/icon-code.png';
 };
+
+const APP_VERSION = "1.0.0";
 
 function App() {
   const [universalPin] = useState(() => Math.floor(1000 + Math.random() * 9000).toString());
@@ -31,25 +33,44 @@ function App() {
     try {
       const saved = localStorage.getItem('bridgedeck_history');
       if (saved) return JSON.parse(saved);
-    } catch(e) {}
+    } catch (e) { }
     return [];
   });
   const [toastMessage, setToastMessage] = useState(null);
   const [debugLogs, setDebugLogs] = useState([]);
   const [showPolicyPopup, setShowPolicyPopup] = useState(false);
-  
+
   const addDebugLog = (log) => {
     setDebugLogs(prev => [...prev.slice(-9), new Date().toISOString().split('T')[1].slice(0, -1) + " " + log]);
   };
-  
+
   const [pinDigits, setPinDigits] = useState(['', '', '', '']);
   const pinRefs = [useRef(), useRef(), useRef(), useRef()];
 
   const [ws, setWs] = useState(null);
 
-  const [currentView, setCurrentView] = useState('main'); 
-  const [beamState, setBeamState] = useState('setup'); 
-  const [hubState, setHubState] = useState('setup'); 
+  const [currentView, setCurrentView] = useState('main');
+  const [beamState, setBeamState] = useState('setup');
+  const [hubState, setHubState] = useState('setup');
+  const [stagedFiles, setStagedFiles] = useState([]);
+  const [showSplash, setShowSplash] = useState(true);
+  const [updateInfo, setUpdateInfo] = useState(null);
+
+  useEffect(() => {
+    // Check for forced updates on launch
+    fetch('https://sharedaa.varunkulkarni.dpdns.org/version.json')
+      .then(res => res.json())
+      .then(data => {
+        if (data.latest_version && data.latest_version !== APP_VERSION && data.force_update) {
+          setUpdateInfo(data);
+        } else if (data.latest_version && data.latest_version !== APP_VERSION) {
+          setTimeout(() => showToast(`Update available: ${data.latest_version}. Check MS Store!`), 5000);
+        }
+      }).catch(e => console.log("Update check failed (offline)", e));
+
+    const timer = setTimeout(() => setShowSplash(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Refs for logic decoupled from UI
   const sessionIdRef = useRef(null);
@@ -67,16 +88,19 @@ function App() {
     try {
       const saved = localStorage.getItem('bridgedeck_settings');
       if (saved) return JSON.parse(saved);
-    } catch(e) {}
+    } catch (e) { }
     return {
       deviceName: "victno",
       discoverable: true,
       autoAccept: false,
+      performanceMode: false,
     };
   });
 
+  const settingsRef = useRef(settings);
   useEffect(() => {
     localStorage.setItem('bridgedeck_settings', JSON.stringify(settings));
+    settingsRef.current = settings;
   }, [settings]);
 
   useEffect(() => {
@@ -141,7 +165,7 @@ function App() {
         const meta = nextBinaryMetaRef.current;
         if (!meta) return;
         if (cancelledTransfers.current.has(meta.fileId)) return;
-        
+
         const processChunk = async () => {
           if (meta.chunkIndex === 0) {
             transferStartTimes.current[meta.fileId] = Date.now();
@@ -164,11 +188,11 @@ function App() {
             } else {
               const isCompleted = meta.totalChunks === 1;
               if (isCompleted) justCompleted = true;
-              return [...prev, { 
-                id: meta.fileId, batchId: meta.batchId, sessionId: sessionIdRef.current, 
-                name: meta.fileName, size: meta.fileSize, total: meta.totalChunks, 
-                type: 'incoming', status: isCompleted ? 'completed' : 'receiving', 
-                received: 1, progress: isCompleted ? 100 : 0, timestamp: Date.now() 
+              return [...prev, {
+                id: meta.fileId, batchId: meta.batchId, sessionId: sessionIdRef.current,
+                name: meta.fileName, size: meta.fileSize, total: meta.totalChunks,
+                type: 'incoming', status: isCompleted ? 'completed' : 'receiving',
+                received: 1, progress: isCompleted ? 100 : 0, timestamp: Date.now()
               }];
             }
             return prev;
@@ -178,6 +202,12 @@ function App() {
             const durationMs = Date.now() - (transferStartTimes.current[meta.fileId] || Date.now());
             const seconds = (durationMs / 1000).toFixed(2);
             addDebugLog(`🚀 ${meta.fileName} (${formatBytes(meta.fileSize)}) arrived in ${seconds}s`);
+
+            if (settingsRef.current.autoAccept) {
+              setTimeout(() => {
+                saveFile({ id: meta.fileId, name: meta.fileName, saved: false });
+              }, 500);
+            }
           }
         };
 
@@ -189,7 +219,7 @@ function App() {
       }
 
       let data;
-      try { data = JSON.parse(e.data); } catch(err) { return; }
+      try { data = JSON.parse(e.data); } catch (err) { return; }
       if (data.payload && data.payload.senderId === clientId) return;
 
       if (data.event === 'file-chunk-meta') {
@@ -277,7 +307,7 @@ function App() {
         if (cancelledTransfers.current.has(msg.id)) break;
         const start = i * CHUNK_SIZE;
         const chunkDataBuffer = await file.slice(start, start + CHUNK_SIZE).arrayBuffer();
-        
+
         // Wait if buffer is over 2MB to perfectly sync UI progress with actual Wi-Fi network speed
         while (ws.bufferedAmount > 2 * 1024 * 1024) {
           await new Promise(r => setTimeout(r, 20));
@@ -323,12 +353,12 @@ function App() {
   const saveFile = async (msg) => {
     if (msg.saved) return;
     const chunks = fileChunksRef.current[msg.id];
-    
-    if (!chunks) { 
-      showToast("File data not found. Session may have been cleared."); 
-      return; 
+
+    if (!chunks) {
+      showToast("File data not found. Session may have been cleared.");
+      return;
     }
-    
+
     try {
       const blobOrFile = new Blob(chunks, { type: 'application/octet-stream' });
       const url = URL.createObjectURL(blobOrFile);
@@ -339,10 +369,10 @@ function App() {
       a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      
+
       setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, saved: true } : m));
       showToast("File saved successfully!");
-    } catch(e) {
+    } catch (e) {
       if (e.name !== 'AbortError') showToast("Error saving file: " + e.message);
     }
   };
@@ -350,7 +380,7 @@ function App() {
   const saveAllFiles = async (batch) => {
     const unSaved = batch.files.filter(f => !f.saved);
     if (unSaved.length === 0) return;
-    
+
     try {
       let delay = 0;
       for (const msg of unSaved) {
@@ -358,7 +388,7 @@ function App() {
         delay += 200; // stagger downloads slightly
       }
       showToast("All files saved successfully!");
-    } catch(e) {
+    } catch (e) {
       if (e.name !== 'AbortError') showToast("Error saving files: " + e.message);
     }
   };
@@ -366,11 +396,11 @@ function App() {
   useEffect(() => {
     const handleGlobalDragOver = (e) => { e.preventDefault(); setIsDragging(true); };
     const handleGlobalDragLeave = (e) => { e.preventDefault(); setIsDragging(false); };
-    const handleGlobalDrop = (e) => { 
-      e.preventDefault(); 
-      setIsDragging(false); 
+    const handleGlobalDrop = (e) => {
+      e.preventDefault();
+      setIsDragging(false);
       if (beamState === 'connected' && e.dataTransfer.files.length > 0) {
-        sendFiles(Array.from(e.dataTransfer.files));
+        setStagedFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]);
       }
     };
     window.addEventListener('dragover', handleGlobalDragOver);
@@ -383,10 +413,17 @@ function App() {
     };
   }, [beamState]);
 
-  const handleDrop = (e) => { e.preventDefault(); setIsDragging(false); sendFiles(Array.from(e.dataTransfer.files)); };
+  const handleDrop = (e) => { e.preventDefault(); setIsDragging(false); setStagedFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]); };
   const handleDragOver = (e) => { e.preventDefault(); setIsDragging(true); };
   const handleDragLeave = (e) => { e.preventDefault(); setIsDragging(false); };
-  const handleFileSelect = (e) => { if (e.target.files.length > 0) { sendFiles(Array.from(e.target.files)); e.target.value = ''; } };
+  const handleFileSelect = (e) => { if (e.target.files.length > 0) { setStagedFiles(prev => [...prev, ...Array.from(e.target.files)]); e.target.value = ''; } };
+
+  const confirmAndSend = () => {
+    if (stagedFiles.length > 0) {
+      sendFiles(stagedFiles);
+      setStagedFiles([]);
+    }
+  };
 
   const cancelTransfer = (fileId) => {
     if (ws && ws.readyState === WebSocket.OPEN) {
@@ -434,7 +471,7 @@ function App() {
 
   // Group messages into batches for display
   const sessionMessages = messages.filter(m => m.sessionId === sessionIdRef.current);
-  
+
   const groupedSessionBatches = useMemo(() => {
     const batchesMap = new Map();
     sessionMessages.forEach(msg => {
@@ -490,8 +527,8 @@ function App() {
           position: relative;
           z-index: 10;
           display: flex;
-          gap: 32px;
-          padding: 48px;
+          gap: clamp(12px, 2.5vw, 32px);
+          padding: clamp(16px, 3.5vw, 48px);
           height: 100%;
           box-sizing: border-box;
           max-width: 1600px;
@@ -504,8 +541,9 @@ function App() {
           backdrop-filter: blur(40px); 
           -webkit-backdrop-filter: blur(40px);
           border-radius: 32px; 
-          padding: 40px 32px; 
-          width: 320px; 
+          padding: clamp(20px, 3vw, 40px) clamp(16px, 2.5vw, 32px); 
+          width: clamp(160px, 22vw, 320px); 
+          flex-shrink: 0;
           display: flex; 
           flex-direction: column; 
           border: 1px solid rgba(255,255,255,0.15); 
@@ -517,13 +555,29 @@ function App() {
           backdrop-filter: blur(40px); 
           -webkit-backdrop-filter: blur(40px);
           border-radius: 32px; 
-          padding: 40px 48px; 
+          padding: clamp(20px, 3vw, 40px) clamp(20px, 3.5vw, 48px); 
           flex-grow: 1; 
+          min-width: 0;
           display: flex; 
           flex-direction: column; 
           overflow-y: auto; 
           border: 1px solid rgba(255,255,255,0.4); 
           box-shadow: 0 16px 40px rgba(0,0,0,0.05); 
+        }
+
+        .setup-card {
+          border-radius: 32px !important;
+          padding: 64px 40px !important;
+          display: flex !important;
+          flex-direction: column !important;
+          align-items: center !important;
+          justify-content: center !important;
+          text-align: center !important;
+          overflow: hidden !important;
+          isolation: isolate;
+          will-change: transform;
+          transform: translateZ(0);
+          -webkit-mask-image: -webkit-radial-gradient(white, black);
         }
 
         .text-beam { color: #FFFFFF; }
@@ -532,35 +586,40 @@ function App() {
         .text-hub-muted { color: #8c8266; }
 
         /* --- SIDEBAR COMPONENTS --- */
-        .sidebar-profile { display: flex; align-items: center; gap: 20px; margin-bottom: 64px; position: relative; }
-        .sidebar-profile img { width: 72px; height: 72px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.8); box-shadow: 0 8px 16px rgba(0,0,0,0.1); object-fit: cover; animation: floatAvatar 4s ease-in-out infinite; cursor: pointer; transition: 0.2s; }
+        .sidebar-profile { display: flex; align-items: center; gap: clamp(10px, 1.5vw, 20px); margin-bottom: clamp(24px, 4vw, 64px); position: relative; flex-wrap: wrap; }
+        .sidebar-profile img { width: clamp(44px, 5.5vw, 72px); height: clamp(44px, 5.5vw, 72px); border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.8); box-shadow: 0 8px 16px rgba(0,0,0,0.1); object-fit: cover; animation: floatAvatar 4s ease-in-out infinite; cursor: pointer; transition: 0.2s; }
         .sidebar-profile img:hover { transform: scale(1.05); }
-        .sidebar-profile div h3 { margin: 0; font-size: 28px; letter-spacing: -0.5px; }
-        .sidebar-profile div p { margin: 4px 0 0 0; font-size: 16px; font-family: 'Inter', sans-serif; }
+        .sidebar-profile div h3 { margin: 0; font-size: clamp(16px, 2vw, 28px); letter-spacing: -0.5px; }
+        .sidebar-profile div p { margin: 4px 0 0 0; font-size: clamp(13px, 1.2vw, 16px); font-family: 'Inter', sans-serif; }
 
-        .nav-link { display: flex; align-items: center; gap: 16px; padding: 12px 20px; border-radius: 12px; font-size: 20px; cursor: pointer; margin-bottom: 12px; transition: 0.2s; font-family: 'Cal Sans', sans-serif; color: #FFFFFF; }
+        .nav-link { display: flex; align-items: center; gap: 16px; padding: clamp(8px, 1vw, 12px) clamp(12px, 1.5vw, 20px); border-radius: 12px; font-size: clamp(14px, 1.6vw, 20px); cursor: pointer; margin-bottom: 12px; transition: 0.2s; font-family: 'Cal Sans', sans-serif; color: #FFFFFF; }
         .nav-link.active { background: rgba(255,255,255,0.2); }
         .nav-link:hover:not(.active) { background: rgba(255, 255, 255, 0.1); }
 
         /* --- MAIN CONTENT PANELS --- */
-        .header-title { font-size: 56px; margin: 0 0 48px 0; letter-spacing: -1px; color: #1C3125; text-shadow: 0 4px 12px rgba(255,255,255,0.3); }
+        .header-title { font-size: clamp(22px, 4vw, 56px); margin: 0 0 clamp(16px, 3vw, 48px) 0; letter-spacing: -0.5px; color: #1C3125; text-shadow: 0 4px 12px rgba(255,255,255,0.3); }
 
         /* 3D CARDS ROW */
-        .cards-row { display: flex; gap: 48px; margin-bottom: 24px; }
-        .figma-card { position: relative; width: 370px; height: 270px; cursor: pointer; transition: transform 0.2s ease; }
+        .cards-row { display: flex; gap: clamp(16px, 3.5vw, 48px); margin-bottom: 24px; flex-wrap: wrap; }
+        .figma-card { position: relative; width: clamp(160px, 30vw, 370px); height: clamp(120px, 22vw, 270px); cursor: pointer; transition: transform 0.2s ease; flex-shrink: 0; }
         .figma-card:hover { transform: translateY(-8px); }
         .figma-card .rect-shadow { position: absolute; left: 0; right: 0; bottom: 0; top: 1.95%; background: #FFFFFF; box-shadow: 0px 4px 31px rgba(0, 0, 0, 0.27); border-radius: 18px; }
         .figma-card .rect-gradient { position: absolute; left: 0; right: 0; top: 0; bottom: 1.95%; border-radius: 18px; }
-        .card-bg-beam { background: linear-gradient(-45deg, #779070, #1C3125, #4D6948, #2a4a38); background-size: 300% 300%; animation: liveGradient 8s ease infinite; }
-        .card-bg-hub { background: linear-gradient(-45deg, #EAE2CA, #A29777, #d4caab, #8c8266); background-size: 300% 300%; animation: liveGradient 8s ease infinite; }
-        .figma-card .icon-img { position: absolute; left: 0; right: 0; top: 16px; height: 140px; background-position: center; background-repeat: no-repeat; background-size: contain; z-index: 2; }
-        .figma-card .card-title { position: absolute; left: 0; right: 0; top: 156px; font-family: 'Cal Sans', sans-serif; font-weight: 400; font-size: 40px; line-height: 1.2; letter-spacing: -0.5px; text-align: center; margin: 0; z-index: 2; }
+        .card-bg-beam { background: linear-gradient(-45deg, #779070, #1C3125, #4D6948, #2a4a38); background-size: 300% 300%; }
+        .card-bg-hub { background: linear-gradient(-45deg, #EAE2CA, #A29777, #d4caab, #8c8266); background-size: 300% 300%; }
+
+        /* PERFORMANCE MODE */
+        .perf-mode * { animation: none !important; }
+        .perf-mode .glass-sidebar, .perf-mode .glass-main { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; background: rgba(245,245,245,0.95) !important; }
+        .perf-mode .glass-sidebar { background: rgba(28,49,37,0.95) !important; }
+        .figma-card .icon-img { position: absolute; left: 0; right: 0; top: 5.9%; height: 51.8%; background-position: center; background-repeat: no-repeat; background-size: contain; z-index: 2; }
+        .figma-card .card-title { position: absolute; left: 0; right: 0; top: 57.7%; font-family: 'Cal Sans', sans-serif; font-weight: 400; font-size: clamp(18px, 2.8vw, 40px); line-height: 1.2; letter-spacing: -0.5px; text-align: center; margin: 0; z-index: 2; }
         .title-beam { color: #FFFFFF; text-shadow: 0px 0px 34px rgba(0, 0, 0, 0.25); }
         .title-hub { color: #FFFFFF; text-shadow: 0px 4px 32px rgba(0, 0, 0, 0.25); }
-        .figma-card .badge { position: absolute; left: 50%; transform: translateX(-50%); top: 216px; width: 180px; height: 32px; border-radius: 7px; z-index: 1; }
+        .figma-card .badge { position: absolute; left: 50%; transform: translateX(-50%); top: 80%; width: clamp(80px, 13vw, 180px); height: clamp(20px, 2.5vw, 32px); border-radius: 7px; z-index: 1; }
         .badge-beam { background: #4D6948; }
         .badge-hub { background: #696151; }
-        .figma-card .subtitle { position: absolute; left: 0; right: 0; top: 218px; font-family: 'Cal Sans', sans-serif; font-weight: 400; font-size: 16px; line-height: 28px; letter-spacing: -0.5px; text-align: center; margin: 0; z-index: 2; display: flex; align-items: center; justify-content: center; }
+        .figma-card .subtitle { position: absolute; left: 0; right: 0; top: 80.7%; font-family: 'Cal Sans', sans-serif; font-weight: 400; font-size: clamp(10px, 1.2vw, 16px); line-height: 28px; letter-spacing: -0.5px; text-align: center; margin: 0; z-index: 2; display: flex; align-items: center; justify-content: center; }
         .subtitle-beam { color: #ACC7A4; }
         .subtitle-hub { color: #EAE2CA; }
 
@@ -576,7 +635,7 @@ function App() {
         /* SETTINGS */
         .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 20px; background: rgba(255,255,255,0.6); border-radius: 16px; margin-bottom: 16px; font-family: 'Inter', sans-serif; }
         .setting-info h4 { margin: 0 0 4px 0; color: #1C3125; font-size: 18px; }
-        .setting-info p { margin: 0; font-size: 14px; color: #8c8266; }
+        .setting-info p { margin: 0; font-size: 15px; color: #8c8266; }
         .setting-control input[type="text"] { padding: 12px 16px; border-radius: 8px; border: none; font-family: 'Inter', sans-serif; font-size: 16px; width: 250px; background: rgba(255,255,255,0.8); color: #1C3125; box-shadow: inset 0 2px 6px rgba(0,0,0,0.05); }
 
         /* INNER SCREENS (PIN & DRAG) */
@@ -595,6 +654,32 @@ function App() {
         .bubble-outgoing .bubble-file-row { border-bottom-color: rgba(255,255,255,0.1); }
       `}</style>
 
+      {/* UPDATE REQUIRED BLOCKER */}
+      {updateInfo && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(28,49,37,0.95)', backdropFilter: 'blur(10px)', zIndex: 10000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'white', padding: '40px', textAlign: 'center' }}>
+          <AlertTriangle size={64} style={{ marginBottom: '24px', color: '#FCD34D' }} />
+          <h1 style={{ fontFamily: 'Instrument Serif', fontSize: '48px', margin: '0 0 16px 0' }}>Update Required</h1>
+          <p style={{ fontFamily: 'Inter', fontSize: '18px', maxWidth: '400px', lineHeight: 1.5, opacity: 0.9, marginBottom: '32px' }}>
+            {updateInfo.update_message || "A critical update is required to continue using ShareDaa."}
+          </p>
+          <button onClick={() => invoke('open_browser_url', { url: 'ms-windows-store://' })} style={{ background: 'white', color: '#1C3125', padding: '16px 32px', borderRadius: '16px', border: 'none', fontWeight: 700, fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', fontFamily: 'Cal Sans', transition: '0.2s', boxShadow: '0 8px 24px rgba(255,255,255,0.2)' }}>
+            <Download size={20} /> Update via Microsoft Store
+          </button>
+        </div>
+      )}
+
+      {/* SPLASH SCREEN OVERLAY */}
+      <div style={{ 
+        position: 'fixed', inset: 0, background: '#1E3528', zIndex: 9999, 
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
+        opacity: showSplash ? 1 : 0, 
+        pointerEvents: showSplash ? 'auto' : 'none',
+        transition: 'opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1)'
+      }}>
+        <img src="/rocket.png" alt="Rocket" style={{ width: '180px', height: '180px', objectFit: 'contain', marginBottom: '32px', animation: 'floatAvatar 3s ease-in-out infinite' }} />
+        <h1 style={{ fontFamily: '"Instrument Serif", serif', fontSize: '72px', color: '#F2EDE6', margin: 0, textShadow: '0 8px 32px rgba(0,0,0,0.3)' }}>Share<em style={{ color: '#5A8A6A', fontStyle: 'italic' }}>Daa</em></h1>
+      </div>
+
       {isVPNActive && (
         <div className="fade-in" style={{ position: 'absolute', bottom: '32px', left: '32px', background: '#DC2626', color: 'white', padding: '16px 24px', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '12px', zIndex: 100, boxShadow: '0 8px 32px rgba(220, 38, 38, 0.4)', fontSize: '15px', fontWeight: 600, fontFamily: 'Inter' }}>
           <AlertTriangle size={20} /> VPN is currently active. P2P transfers may fail.
@@ -602,12 +687,16 @@ function App() {
         </div>
       )}
 
-      <div className="figma-canvas">
-        <div className="bubbles-1"></div>
-        <div className="bubbles"></div>
+      <div className={`figma-canvas ${settings.performanceMode ? 'perf-mode' : ''}`}>
+        {!settings.performanceMode && (
+          <>
+            <div className="bubbles-1"></div>
+            <div className="bubbles"></div>
+          </>
+        )}
 
         <div className="dashboard-layout">
-          
+
           {/* SIDEBAR (Liquid Glass Dark) */}
           <div className="glass-sidebar text-beam">
             <div className="sidebar-profile">
@@ -620,8 +709,8 @@ function App() {
               {showAvatarModal && (
                 <div style={{ position: 'absolute', top: '90px', left: '0px', background: 'rgba(255,255,255,0.95)', padding: '16px', borderRadius: '16px', boxShadow: '0 12px 32px rgba(0,0,0,0.2)', zIndex: 50, display: 'flex', gap: '12px', border: '1px solid rgba(0,0,0,0.1)' }}>
                   {['/icon-avatar.png', '/icon-avatar2.png', '/icon-avatar3.png', '/icon-avatar4.png'].map(src => (
-                    <img 
-                      key={src} src={src} alt="avatar option" 
+                    <img
+                      key={src} src={src} alt="avatar option"
                       onClick={() => { setAvatarUrl(src); setShowAvatarModal(false); }}
                       style={{ width: '48px', height: '48px', borderRadius: '50%', cursor: 'pointer', border: avatarUrl === src ? '2px solid #1C3125' : '2px solid transparent', transition: '0.2s', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', animation: 'none' }}
                     />
@@ -640,7 +729,13 @@ function App() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '48px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 <h1 className="header-title" style={{ margin: 0 }}>
-                  {currentView === 'main' && `Good afternoon, ${settings.deviceName.split("'")[0]}.`}
+                  {currentView === 'main' && (() => {
+                    const hour = new Date().getHours();
+                    let greeting = 'Good evening';
+                    if (hour < 12) greeting = 'Good morning';
+                    else if (hour < 18) greeting = 'Good afternoon';
+                    return `${greeting}, ${settings.deviceName.split("'")[0]}.`;
+                  })()}
                   {currentView === 'beam' && 'Direct Beam'}
                   {currentView === 'hub' && 'Drop Hub'}
                   {currentView === 'history' && 'Transfer History'}
@@ -705,26 +800,37 @@ function App() {
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
                 {beamState === 'setup' && (
                   <div style={{ display: 'flex', height: '100%', gap: '48px', alignItems: 'center' }}>
-                    {/* Share Section with QR Code */}
-                    <div className="setup-card" style={{ flex: 1, background: 'rgba(255,255,255,0.5)', borderRadius: '32px', overflow: 'hidden' }}>
-                      <h3 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '16px' }}>Share your code</h3>
-                      <p style={{ fontSize: '16px', color: 'rgba(28,49,37,0.7)', marginBottom: '32px', fontFamily: 'Inter' }}>Scan with the mobile app or enter PIN on desktop.</p>
+                    {/* Share Section with QR Code (Rebuilt from scratch) */}
+                    <div style={{ flex: 1, position: 'relative', height: '100%' }}>
+                      {/* The bulletproof background layer */}
+                      <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.5)', borderRadius: '32px', zIndex: 0 }}></div>
                       
-                      <div style={{ background: '#FFFFFF', padding: '20px', borderRadius: '24px', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', marginBottom: '24px' }}>
-                        <QRCode value={`http://${localIp}:5173/mobile.html?pin=${universalPin}`} size={160} fgColor="#1C3125" qrStyle="dots" eyeRadius={8} />
+                      {/* The content layer */}
+                      <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 40px', textAlign: 'center' }}>
+                        <h3 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '16px' }}>Share your code</h3>
+                        <p style={{ fontSize: '16px', color: 'rgba(28,49,37,0.7)', marginBottom: '32px', fontFamily: 'Inter' }}>Scan with the mobile app or enter PIN on desktop.</p>
+                        
+                        <div style={{ background: '#FFFFFF', padding: '20px', borderRadius: '24px', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', marginBottom: '24px' }}>
+                          <QRCode value={`http://${localIp}:5173/mobile.html?pin=${universalPin}`} size={160} fgColor="#1C3125" qrStyle="dots" eyeRadius={8} />
+                        </div>
+                        <div style={{ fontSize: '48px', fontFamily: '"Cal Sans", sans-serif', letterSpacing: '4px', fontWeight: 600 }}>{universalPin}</div>
                       </div>
-                      <div style={{ fontSize: '48px', fontFamily: '"Cal Sans", sans-serif', letterSpacing: '4px', fontWeight: 600 }}>{universalPin}</div>
                     </div>
 
-                    {/* Join Section with 4-box PIN */}
-                    <div className="setup-card" style={{ flex: 1, background: 'rgba(255,255,255,0.3)', borderRadius: '32px', overflow: 'hidden' }}>
-                      <h3 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '16px' }}>Join a device</h3>
-                      <p style={{ fontSize: '16px', color: 'rgba(28,49,37,0.7)', marginBottom: '48px', fontFamily: 'Inter' }}>Enter the 4-digit PIN of the device you want to connect to.</p>
+                    {/* Join Section with 4-box PIN (Rebuilt from scratch) */}
+                    <div style={{ flex: 1, position: 'relative', height: '100%' }}>
+                      {/* The bulletproof background layer */}
+                      <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.3)', borderRadius: '32px', zIndex: 0 }}></div>
+                      
+                      {/* The content layer */}
+                      <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 40px', textAlign: 'center' }}>
+                        <h3 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '16px' }}>Join a device</h3>
+                        <p style={{ fontSize: '16px', color: 'rgba(28,49,37,0.7)', marginBottom: '48px', fontFamily: 'Inter' }}>Enter the 4-digit PIN of the device you want to connect to.</p>
 
-                      <div style={{ display: 'flex', gap: '16px', marginBottom: '48px' }}>
-                        {[0, 1, 2, 3].map((index) => (
-                          <input
-                            key={index}
+                        <div style={{ display: 'flex', gap: '16px', marginBottom: '48px' }}>
+                          {[0, 1, 2, 3].map((index) => (
+                            <input
+                              key={index}
                             ref={pinRefs[index]}
                             type="text"
                             maxLength={1}
@@ -742,8 +848,8 @@ function App() {
                           const enteredPin = pinDigits.join('');
                           if (enteredPin.length !== 4) showToast('Please enter a 4-digit PIN');
                           else if (enteredPin === universalPin) showToast('Cannot use your own PIN!');
-                          else { 
-                            ws.send(JSON.stringify({ event: 'join-beam', payload: { pin: enteredPin } })); 
+                          else {
+                            ws.send(JSON.stringify({ event: 'join-beam', payload: { pin: enteredPin } }));
                             // Timeout fallback if no device claims the PIN
                             setTimeout(() => {
                               if (!isConnectedRef.current) {
@@ -757,14 +863,39 @@ function App() {
                       </button>
                     </div>
                   </div>
+                </div>
                 )}
 
                 {beamState === 'connected' && (
                   <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
-                    
+
+                    {/* STAGED FILES QUEUE */}
+                    {stagedFiles.length > 0 && (
+                      <div style={{ background: 'rgba(255,255,255,0.6)', borderRadius: '24px', padding: '24px', marginBottom: '24px', boxShadow: '0 8px 32px rgba(0,0,0,0.05)', flexShrink: 0 }}>
+                        <h3 style={{ margin: '0 0 16px 0', fontSize: '20px', color: '#1C3125' }}>Ready to Send ({stagedFiles.length})</h3>
+                        <div style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+                          {stagedFiles.map((file, idx) => (
+                            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.8)', padding: '12px 16px', borderRadius: '12px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
+                                <img src={getFileIconSrc(file.name)} alt="icon" style={{ width: '24px', height: '24px' }} />
+                                <span style={{ fontWeight: 600, fontSize: '14px', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{file.name}</span>
+                              </div>
+                              <button onClick={() => setStagedFiles(prev => prev.filter((_, i) => i !== idx))} style={{ background: 'rgba(220,38,38,0.1)', color: '#DC2626', border: 'none', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                          <button onClick={() => setStagedFiles([])} style={{ flex: 1, padding: '12px', background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: '12px', color: '#1C3125', fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter' }}>Cancel All</button>
+                          <button onClick={confirmAndSend} style={{ flex: 2, padding: '12px', background: 'var(--forest)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: 600, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', fontFamily: 'Inter' }}><UploadCloud size={18} /> Confirm & Send</button>
+                        </div>
+                      </div>
+                    )}
+
                     {/* CHAT FEED */}
                     <div style={{ flex: 1, overflowY: 'auto', paddingRight: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                      {groupedSessionBatches.length === 0 ? (
+                      {groupedSessionBatches.length === 0 && stagedFiles.length === 0 ? (
                         <div style={{ margin: 'auto', textAlign: 'center', color: 'rgba(28,49,37,0.5)' }}>
                           <UploadCloud size={64} style={{ marginBottom: '16px' }} />
                           <div style={{ fontSize: '24px', fontWeight: 600 }}>Connection Secure</div>
@@ -783,7 +914,7 @@ function App() {
                                 )}
                               </div>
                             )}
-                            
+
                             {batch.files.map((msg, idx) => (
                               <div key={msg.id} className="bubble-file-row" style={{ borderBottom: (idx === batch.files.length - 1) ? 'none' : '1px solid rgba(128,128,128,0.1)', padding: batch.files.length === 1 ? '0' : '12px 0' }}>
                                 <div className="file-icon" style={{ width: '56px', height: '56px', background: 'rgba(255,255,255,0.4)', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -797,7 +928,7 @@ function App() {
                                       <span style={{ fontWeight: 600, color: batch.type === 'outgoing' ? 'white' : '#4D6948' }}>{msg.progress}%</span>
                                     )}
                                   </div>
-                                  
+
                                   {msg.status === 'cancelled' ? (
                                     <div style={{ marginTop: '4px', fontSize: '14px', color: '#DC2626', fontWeight: 600 }}>Transfer Cancelled</div>
                                   ) : msg.status !== 'completed' && (
@@ -806,7 +937,7 @@ function App() {
                                     </div>
                                   )}
                                 </div>
-                                
+
                                 {msg.status === 'sending' || msg.status === 'receiving' ? (
                                   <button onClick={() => cancelTransfer(msg.id)} style={{ background: 'rgba(220,38,38,0.1)', color: '#DC2626', border: 'none', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, transition: '0.2s' }}>
                                     <X size={18} />
@@ -851,7 +982,7 @@ function App() {
                     </div>
                     <h3 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '16px' }}>Create a Workspace</h3>
                     <p style={{ fontSize: '16px', color: 'rgba(28,49,37,0.7)', marginBottom: '32px', fontFamily: 'Inter', maxWidth: '300px' }}>Start a collaborative session for multiple devices.</p>
-                    
+
                     <button className="beam-btn" onClick={() => showToast('Hub functionality coming soon!')}>
                       <Plus size={20} /> New Hub
                     </button>
@@ -898,15 +1029,15 @@ function App() {
             {currentView === 'settings' && (
               <div className="fade-in" style={{ padding: '40px' }}>
                 <h2 style={{ fontSize: '28px', color: '#1E3528', marginBottom: '24px', fontFamily: 'Instrument Serif' }}>Settings</h2>
-                
+
                 <div style={{ background: 'rgba(255,255,255,0.4)', padding: '24px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.6)', marginBottom: '24px' }}>
                   <h3 style={{ fontSize: '16px', color: '#3D6B52', marginBottom: '16px', fontWeight: 600 }}>Device Profile</h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <label style={{ fontSize: '14px', color: '#1E3528', fontWeight: 500 }}>Device Name</label>
-                    <input 
-                      type="text" 
-                      value={settings.deviceName} 
-                      onChange={(e) => setSettings({...settings, deviceName: e.target.value})} 
+                    <input
+                      type="text"
+                      value={settings.deviceName}
+                      onChange={(e) => setSettings({ ...settings, deviceName: e.target.value })}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.target.blur();
@@ -919,6 +1050,27 @@ function App() {
                 </div>
 
                 <div style={{ background: 'rgba(255,255,255,0.4)', padding: '24px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.6)', marginBottom: '24px' }}>
+                  <h3 style={{ fontSize: '16px', color: '#3D6B52', marginBottom: '16px', fontWeight: 600 }}>Developer</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <img src="/icon-avatar.png" alt="Varun Kulkarni" style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }} />
+                      <div>
+                        <h4 style={{ margin: 0, fontSize: '18px', color: '#1E3528' }}>Varun Kulkarni</h4>
+                        <p style={{ margin: 0, fontSize: '14px', color: '#5A8A6A' }}>Creator & Lead Developer</p>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '16px', marginTop: '8px' }}>
+                      <button onClick={() => invoke('open_browser_url', { url: 'mailto:varunkulkarni214@gmail.com' }).catch(() => {})} style={{ background: '#3D6B52', color: 'white', padding: '10px 16px', borderRadius: '8px', border: 'none', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        Contact Support
+                      </button>
+                      <button onClick={() => invoke('open_browser_url', { url: 'https://sharedaa.varunkulkarni.dpdns.org/' }).catch(() => {})} style={{ background: 'white', color: '#3D6B52', padding: '10px 16px', borderRadius: '8px', border: '1px solid #3D6B52', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        Visit Portfolio <Link size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ background: 'rgba(255,255,255,0.4)', padding: '24px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.6)', marginBottom: '24px' }}>
                   <h3 style={{ fontSize: '16px', color: '#3D6B52', marginBottom: '16px', fontWeight: 600 }}>Legal & About</h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     <p style={{ fontSize: '14px', color: '#1E3528', lineHeight: 1.5 }}>
@@ -926,10 +1078,10 @@ function App() {
                     </p>
                     <div style={{ display: 'flex', gap: '16px' }}>
                       <button onClick={() => invoke('open_browser_url', { url: 'https://sharedaa.varunkulkarni.dpdns.org/privacy.html' }).catch(err => showToast("Could not open browser."))} style={{ background: '#3D6B52', color: 'white', padding: '10px 16px', borderRadius: '8px', border: 'none', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        Read Privacy Policy <Link size={14}/>
+                        Read Privacy Policy <Link size={14} />
                       </button>
                       <button onClick={() => invoke('open_browser_url', { url: 'https://sharedaa.varunkulkarni.dpdns.org/' }).catch(err => showToast("Could not open browser."))} style={{ background: 'white', color: '#3D6B52', padding: '10px 16px', borderRadius: '8px', border: '1px solid #3D6B52', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        Visit Website <Link size={14}/>
+                        Visit Website <Link size={14} />
                       </button>
                     </div>
                   </div>
@@ -943,7 +1095,7 @@ function App() {
                     <div style={{
                       background: settings.discoverable ? '#4D6948' : 'rgba(0,0,0,0.1)',
                       width: '50px', height: '28px', borderRadius: '14px', position: 'relative', cursor: 'pointer', transition: '0.2s', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)'
-                    }} onClick={() => setSettings({...settings, discoverable: !settings.discoverable})}>
+                    }} onClick={() => setSettings({ ...settings, discoverable: !settings.discoverable })}>
                       <div style={{
                         position: 'absolute', top: '2px', left: settings.discoverable ? '24px' : '2px',
                         width: '24px', height: '24px', background: 'white', borderRadius: '50%', transition: '0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
@@ -961,7 +1113,7 @@ function App() {
                     <div style={{
                       background: settings.autoAccept ? '#4D6948' : 'rgba(0,0,0,0.1)',
                       width: '50px', height: '28px', borderRadius: '14px', position: 'relative', cursor: 'pointer', transition: '0.2s', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)'
-                    }} onClick={() => setSettings({...settings, autoAccept: !settings.autoAccept})}>
+                    }} onClick={() => setSettings({ ...settings, autoAccept: !settings.autoAccept })}>
                       <div style={{
                         position: 'absolute', top: '2px', left: settings.autoAccept ? '24px' : '2px',
                         width: '24px', height: '24px', background: 'white', borderRadius: '50%', transition: '0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
@@ -993,20 +1145,20 @@ function App() {
               We believe in absolute privacy. Your files never leave your local network, and we collect zero data. Period.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <button 
+              <button
                 onClick={() => {
                   setShowPolicyPopup(false);
                   localStorage.setItem('policy_seen', 'true');
                   setCurrentView('settings');
-                }} 
+                }}
                 style={{ background: '#1E3528', color: 'white', padding: '14px', borderRadius: '12px', border: 'none', fontWeight: 700, fontSize: '16px', cursor: 'pointer' }}>
                 View Privacy Policy
               </button>
-              <button 
+              <button
                 onClick={() => {
                   setShowPolicyPopup(false);
                   localStorage.setItem('policy_seen', 'true');
-                }} 
+                }}
                 style={{ background: 'transparent', color: '#8A7E6F', padding: '14px', borderRadius: '12px', border: 'none', fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>
                 Dismiss
               </button>
