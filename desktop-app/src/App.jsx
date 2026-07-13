@@ -669,10 +669,10 @@ function App() {
       )}
 
       {/* SPLASH SCREEN OVERLAY */}
-      <div style={{ 
-        position: 'fixed', inset: 0, background: '#1E3528', zIndex: 9999, 
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
-        opacity: showSplash ? 1 : 0, 
+      <div style={{
+        position: 'fixed', inset: 0, background: '#1E3528', zIndex: 9999,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        opacity: showSplash ? 1 : 0,
         pointerEvents: showSplash ? 'auto' : 'none',
         transition: 'opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1)'
       }}>
@@ -804,12 +804,12 @@ function App() {
                     <div style={{ flex: 1, position: 'relative', height: '100%' }}>
                       {/* The bulletproof background layer */}
                       <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.5)', borderRadius: '32px', zIndex: 0 }}></div>
-                      
+
                       {/* The content layer */}
                       <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 40px', textAlign: 'center' }}>
                         <h3 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '16px' }}>Share your code</h3>
                         <p style={{ fontSize: '16px', color: 'rgba(28,49,37,0.7)', marginBottom: '32px', fontFamily: 'Inter' }}>Scan with the mobile app or enter PIN on desktop.</p>
-                        
+
                         <div style={{ background: '#FFFFFF', padding: '20px', borderRadius: '24px', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', marginBottom: '24px' }}>
                           <QRCode value={`http://${localIp}:5173/mobile.html?pin=${universalPin}`} size={160} fgColor="#1C3125" qrStyle="dots" eyeRadius={8} />
                         </div>
@@ -821,7 +821,7 @@ function App() {
                     <div style={{ flex: 1, position: 'relative', height: '100%' }}>
                       {/* The bulletproof background layer */}
                       <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.3)', borderRadius: '32px', zIndex: 0 }}></div>
-                      
+
                       {/* The content layer */}
                       <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 40px', textAlign: 'center' }}>
                         <h3 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '16px' }}>Join a device</h3>
@@ -831,39 +831,39 @@ function App() {
                           {[0, 1, 2, 3].map((index) => (
                             <input
                               key={index}
-                            ref={pinRefs[index]}
-                            type="text"
-                            maxLength={1}
-                            value={pinDigits[index]}
-                            onChange={(e) => handlePinChange(index, e.target.value)}
-                            onKeyDown={(e) => handlePinKeyDown(index, e)}
-                            className="pin-box"
-                          />
-                        ))}
-                      </div>
+                              ref={pinRefs[index]}
+                              type="text"
+                              maxLength={1}
+                              value={pinDigits[index]}
+                              onChange={(e) => handlePinChange(index, e.target.value)}
+                              onKeyDown={(e) => handlePinKeyDown(index, e)}
+                              className="pin-box"
+                            />
+                          ))}
+                        </div>
 
-                      <button
-                        className="beam-btn"
-                        onClick={() => {
-                          const enteredPin = pinDigits.join('');
-                          if (enteredPin.length !== 4) showToast('Please enter a 4-digit PIN');
-                          else if (enteredPin === universalPin) showToast('Cannot use your own PIN!');
-                          else {
-                            ws.send(JSON.stringify({ event: 'join-beam', payload: { pin: enteredPin } }));
-                            // Timeout fallback if no device claims the PIN
-                            setTimeout(() => {
-                              if (!isConnectedRef.current) {
-                                showToast('Invalid PIN or device not found.');
-                              }
-                            }, 2000);
-                          }
-                        }}
-                      >
-                        <Link size={20} /> Secure Connect
-                      </button>
+                        <button
+                          className="beam-btn"
+                          onClick={() => {
+                            const enteredPin = pinDigits.join('');
+                            if (enteredPin.length !== 4) showToast('Please enter a 4-digit PIN');
+                            else if (enteredPin === universalPin) showToast('Cannot use your own PIN!');
+                            else {
+                              ws.send(JSON.stringify({ event: 'join-beam', payload: { pin: enteredPin } }));
+                              // Timeout fallback if no device claims the PIN
+                              setTimeout(() => {
+                                if (!isConnectedRef.current) {
+                                  showToast('Invalid PIN or device not found.');
+                                }
+                              }, 2000);
+                            }
+                          }}
+                        >
+                          <Link size={20} /> Secure Connect
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
                 )}
 
                 {beamState === 'connected' && (
@@ -1060,10 +1060,10 @@ function App() {
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '16px', marginTop: '8px' }}>
-                      <button onClick={() => invoke('open_browser_url', { url: 'mailto:varunkulkarni214@gmail.com' }).catch(() => {})} style={{ background: '#3D6B52', color: 'white', padding: '10px 16px', borderRadius: '8px', border: 'none', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button onClick={() => invoke('open_browser_url', { url: 'mailto:varunkulkarni214@gmail.com' }).catch(() => { })} style={{ background: '#3D6B52', color: 'white', padding: '10px 16px', borderRadius: '8px', border: 'none', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         Contact Support
                       </button>
-                      <button onClick={() => invoke('open_browser_url', { url: 'https://sharedaa.varunkulkarni.dpdns.org/' }).catch(() => {})} style={{ background: 'white', color: '#3D6B52', padding: '10px 16px', borderRadius: '8px', border: '1px solid #3D6B52', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button onClick={() => invoke('open_browser_url', { url: 'https://sharedaa.varunkulkarni.dpdns.org/' }).catch(() => { })} style={{ background: 'white', color: '#3D6B52', padding: '10px 16px', borderRadius: '8px', border: '1px solid #3D6B52', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         Visit Portfolio <Link size={14} />
                       </button>
                     </div>
