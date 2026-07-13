@@ -980,7 +980,15 @@
     // Parse PIN from URL ?pin=XXXX
     const urlParams = new URLSearchParams(window.location.search);
     let pin = urlParams.get('pin');
-    if (!pin) pin = localStorage.getItem('saved_pin');
+    
+    if (pin) {
+      // Clear PIN from URL so refreshing the page doesn't keep using the old PIN
+      urlParams.delete('pin');
+      const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+      window.history.replaceState({}, document.title, newUrl);
+    } else {
+      pin = localStorage.getItem('saved_pin');
+    }
     
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     let deviceName = localStorage.getItem('victno_name') || 'victno'; // Fallback to their chosen name
@@ -1038,6 +1046,7 @@
 
     socket.on('disconnect-beam', () => {
       showLoadingScreen('Host ended the Beam.', true);
+      localStorage.removeItem('saved_pin');
     });
 
     socket.on('disconnect', () => {
@@ -1048,6 +1057,7 @@
     document.getElementById('btn-disconnect').addEventListener('click', () => {
       socket.emit('disconnect-beam');
       showLoadingScreen('Disconnected.', true);
+      localStorage.removeItem('saved_pin');
     });
 
     function handleTransferCancel(fileId) {
