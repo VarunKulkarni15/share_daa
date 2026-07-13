@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ShareDaa · Drop Hub</title>
+  <link rel="icon" href="icon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --cream: #F2EDE6; --forest: #1E3528; --sage: #3D6B52; --sage-light: #5A8A6A; --border: #D4CAB8; --text-muted: #8A7E6F; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; width: 100%; overflow: hidden; position: fixed; }
+    body { 
+      font-family: 'Syne', sans-serif; 
+      background: #E2E8DE; /* Base color */
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    /* Animated Gradient Overlay - Cheaper than background-position */
+    .hub-bg-gradient {
+      position: fixed; inset: -100%; width: 300%; height: 300%;
+      background: linear-gradient(120deg, #F2EDE6 0%, #E2E8DE 40%, #C8DACF 100%);
+      z-index: -2;
+      will-change: transform;
+      animation: auroraOrbit 40s linear infinite;
+    }
+    @keyframes auroraOrbit { 
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    body::before, body::after { 
+      content: ''; position: absolute; border-radius: 50%; 
+      filter: blur(30px); /* Reduced for performance */
+      z-index: -1; 
+      will-change: transform;
+      animation: floatBlobs 20s infinite alternate ease-in-out; 
+    }
+    body::before { width: 300px; height: 300px; background: rgba(90,138,106,0.25); top: -50px; left: -50px; }
+    body::after  { width: 250px; height: 250px; background: rgba(61,107,82,0.12); bottom: -100px; right: -50px; animation-direction: alternate-reverse; animation-duration: 25s; }
+    @keyframes floatBlobs { 100% { transform: translate3d(50px, 40px, 0) scale(1.05); } }
+
+    /* ── SPLASH ── */
+    #splash { position: fixed; inset: 0; z-index: 9999; background: var(--forest); display: flex; align-items: center; justify-content: center; overflow: hidden; clip-path: inset(0 0 0 0); transition: clip-path 0.8s cubic-bezier(0.7, 0, 0.1, 1); }
+    .splash-logo { font-family: 'Instrument Serif', serif; font-size: 64px; color: var(--cream); z-index: 10; opacity: 1; transition: opacity 0.5s ease; }
+    .splash-logo em { color: var(--sage); font-style: italic; }
+    .rocket-rig { position: absolute; top: 50%; left: 0; transform: translate(-100vw,-50%); z-index: 20; }
+    .physics-wrapper { filter: drop-shadow(-10px 10px 16px rgba(0,0,0,0.4)); }
+    .splash-rocket-img { width: 130px; height: 130px; object-fit: contain; transform: rotate(45deg); }
+    @keyframes mf { 0% { transform: translate(-100vw,-50%); animation-timing-function: cubic-bezier(0.2,0.8,0.3,1); } 45% { transform: translate(calc(50vw - 40px),-50%); animation-timing-function: cubic-bezier(0.4,0,0.3,1); } 65% { transform: translate(calc(50vw - 90px),-50%); animation-timing-function: cubic-bezier(0.7,0,0.2,1); } 100% { transform: translate(150vw,-50%); } }
+    @keyframes mp { 0% { transform: rotate(-12deg) scale(0.95); } 45% { transform: rotate(0deg) scale(1); } 65% { transform: rotate(6deg) scale(0.97); } 100% { transform: rotate(-2deg) scaleX(1.25) scaleY(0.9) translateX(20px); } }
+    .rocket-rig.animate { animation: mf 3s forwards; will-change: transform; }
+    .rocket-rig.animate .physics-wrapper { animation: mp 3s forwards; will-change: transform; }
+
+    /* ── SCREENS ── */
+    .screen { display: none; flex-direction: column; height: 100%; width: 100%; padding: 20px; position: relative; z-index: 1; }
+    .screen.active { display: flex; }
+    #loading-screen { align-items: center; justify-content: center; text-align: center; gap: 20px; }
+    .logo-text { font-family: 'Instrument Serif', serif; font-size: 48px; color: var(--forest); }
+    .logo-text em { color: var(--sage); font-style: italic; }
+    .hub-badge { background: rgba(61,107,82,0.12); color: var(--sage); font-size: 13px; font-weight: 800; padding: 6px 16px; border-radius: 99px; margin-top: -10px; }
+    .status-box { font-size: 16px; font-weight: 700; color: var(--forest); background: rgba(255,255,255,0.6); backdrop-filter: blur(10px); padding: 14px 28px; border-radius: 99px; border: 2px solid var(--sage); transition: color 0.3s, border-color 0.3s; }
+
+    /* ── TRANSFER SCREEN ── */
+    .header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px dashed rgba(61,107,82,0.2); margin-bottom: 12px; flex-shrink: 0; }
+    .header-title { font-family: 'Instrument Serif', serif; font-size: 24px; color: var(--forest); }
+    .header-subtitle { font-size: 10px; font-weight: 700; color: var(--sage); display: flex; align-items: center; gap: 5px; text-transform: uppercase; margin-top: 2px; }
+    .pulse-dot { width: 6px; height: 6px; background: var(--sage); border-radius: 50%; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(61,107,82,0.4); } 70% { box-shadow: 0 0 0 6px rgba(61,107,82,0); } 100% { box-shadow: 0 0 0 0 rgba(61,107,82,0); } }
+    .btn-disconnect { background: #FEE2E2; color: #DC2626; border: 1px solid #FCA5A5; padding: 6px 12px; border-radius: 99px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px; cursor: pointer; }
+
+    /* ── CHAT ── */
+    .chat-area { flex: 1; background: rgba(255,255,255,0.4); backdrop-filter: blur(20px); border-radius: 18px; border: 1px solid rgba(255,255,255,0.6); overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 0; }
+    .empty-text { font-size: 14px; font-weight: 600; color: var(--text-muted); text-align: center; margin-top: 30px; }
+    .chat-message { display: flex; flex-direction: column; width: 100%; margin-bottom: 18px; }
+    .chat-message.sent    { align-items: flex-end; }
+    .chat-message.received { align-items: flex-start; }
+    .chat-sender { font-size: 10px; font-weight: 800; color: var(--forest); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px; }
+    .sender-avatar { width: 18px; height: 18px; border-radius: 50%; object-fit: contain; }
+    .chat-bubble { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.85); border: 1px solid white; border-radius: 16px; padding: 11px 13px; min-width: 200px; max-width: 90%; }
+    .chat-message.sent .chat-bubble { background: rgba(210,228,215,0.9); }
+    .chat-icon { width: 38px; height: 38px; flex-shrink: 0; object-fit: contain; }
+    .chat-details { display: flex; flex-direction: column; overflow: hidden; flex: 1; }
+    .chat-filename { font-size: 13px; font-weight: 700; color: var(--forest); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chat-filesize { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .recv-progress { font-size: 11px; color: var(--sage); margin-top: 3px; }
+    .recv-bar-wrap { width: 100%; height: 3px; background: rgba(0,0,0,0.08); border-radius: 2px; margin-top: 3px; overflow: hidden; }
+    .recv-bar { height: 100%; width: 0%; background: var(--sage); transition: width 0.12s; }
+    .btn-save { background: var(--sage); color: white; border: none; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; padding: 8px 18px; border-radius: 99px; margin-top: 6px; cursor: pointer; }
+    .btn-save:active { transform: scale(0.97); }
+
+    /* ── FOOTER ── */
+    .action-footer { padding-top: 12px; margin-top: auto; flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom, 8px); }
+    .staging-tray { display: none; flex-direction: column; background: rgba(255,255,255,0.8); border: 1px dashed var(--border); border-radius: 16px; padding: 10px; margin-bottom: 10px; }
+    .tray-header { font-size: 10px; font-weight: 800; color: var(--sage); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+    .file-box { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.5); border-radius: 9px; padding: 5px 10px; }
+    .file-name { font-size: 12px; font-weight: 700; color: var(--forest); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .btn-cancel { background: transparent; border: none; color: #DC2626; font-size: 16px; font-weight: 700; cursor: pointer; flex-shrink: 0; }
+    .btn-confirm { background: var(--sage); color: white; border: none; padding: 11px; font-size: 14px; margin-top: 8px; border-radius: 13px; font-weight: 700; font-family: 'Syne', sans-serif; cursor: pointer; width: 100%; }
+    .progress-container { display: none; width: 100%; height: 6px; background: rgba(0,0,0,0.1); border-radius: 3px; margin-top: 8px; overflow: hidden; }
+    .progress-bar { height: 100%; width: 0%; background: var(--sage); transition: width 0.1s; }
+    .btn-select { background: rgba(255,255,255,0.6); border: 2px dashed rgba(61,107,82,0.3); color: var(--forest); padding: 14px; border-radius: 13px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; width: 100%; cursor: pointer; }
+
+    /* Toast */
+    #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--forest); color: white; font-size: 12px; font-weight: 700; padding: 8px 18px; border-radius: 99px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 1000; white-space: nowrap; }
+    #toast.show { opacity: 1; }
+
+    /* Hub renamed banner */
+    .hub-renamed-banner { font-size: 11px; font-weight: 700; color: var(--sage); text-align: center; padding: 4px 0; }
+  </style>
+</head>
+<body>
+  <div class="hub-bg-gradient"></div>
+
+  <div id="toast"></div>
+
+  <!-- SPLASH -->
+  <div id="splash">
+    <h1 class="splash-logo" id="splash-logo">Share<em>Daa</em></h1>
+    <div class="rocket-rig" id="rocket-rig">
+      <div class="physics-wrapper">
+        <img src="rocket.png" class="splash-rocket-img" alt="Rocket" onerror="this.style.display='none';">
+      </div>
+    </div>
+  </div>
+
+  <!-- LOADING / CONNECTING -->
+  <div id="loading-screen" class="screen active">
+    <div class="logo-text">Share<em>Daa</em></div>
+    <div class="hub-badge">Drop Hub</div>
+    <div class="status-box" id="status-box">Connecting to Hub…</div>
+  </div>
+
+  <!-- HUB ROOM -->
+  <div id="hub-screen" class="screen">
+    <div class="header">
+      <div>
+        <div class="header-title" id="hub-title">Drop Hub</div>
+        <div class="header-subtitle"><div class="pulse-dot"></div> <span id="hub-member-count">Connected</span></div>
+      </div>
+      <button class="btn-disconnect" id="btn-leave">Leave Hub</button>
+    </div>
+    <div class="chat-area" id="chat-area">
+      <div class="empty-text">Hub is live. No files shared yet.</div>
+    </div>
+    <div class="action-footer">
+      <div class="staging-tray" id="staging-tray">
+        <div class="tray-header">Ready to Share</div>
+        <div class="file-box">
+          <div class="file-name" id="file-name-display"></div>
+          <button class="btn-cancel" id="btn-cancel">×</button>
+        </div>
+        <button class="btn-confirm" id="btn-confirm">Send to Hub</button>
+        <div class="progress-container" id="prog-container"><div class="progress-bar" id="prog-bar"></div></div>
+      </div>
+      <input type="file" id="file-picker" multiple style="display:none;">
+      <button class="btn-select" id="btn-select">+ Select Files to Share</button>
+    </div>
+  </div>
+
+  <!-- Native WebSocket replaces socket.io -->
+  <script>
+    // ── SPLASH ──
+    (function() {
+      const rig  = document.getElementById('rocket-rig');
+      const logo = document.getElementById('splash-logo');
+      const sp   = document.getElementById('splash');
+
+      // Delay initial trigger slightly to allow device to settle
+      setTimeout(() => rig.classList.add('animate'), 500);
+      
+      // Sync with the 3s rocket animation
+      setTimeout(() => logo.style.opacity = '0', 2000);
+      setTimeout(() => sp.style.clipPath = 'inset(0 0 0 100%)', 2600);
+      setTimeout(() => sp.style.display = 'none', 4000);
+    })();
+
+    const CHUNK_SIZE = 1 * 1024 * 1024;
+
+    // ── Icon map ──
+    function getIcon(name) {
+      const ext = (name.split('.').pop() || '').toLowerCase();
+      const m = { jpg:'icon-jpg.png', jpeg:'icon-jpg.png', png:'icon-png.png', mp4:'icon-video.png', mov:'icon-video.png', avi:'icon-video.png', mkv:'icon-video.png', mp3:'icon-audio.png', wav:'icon-audio.png', flac:'icon-audio.png', m4a:'icon-audio.png' };
+      return m[ext] || 'icon-code.png';
+    }
+    function fmtBytes(b) {
+      if (!b) return '0 B';
+      const k=1024, s=['B','KB','MB','GB'], i=Math.floor(Math.log(b)/Math.log(k));
+      return parseFloat((b/Math.pow(k,i)).toFixed(2))+' '+s[i];
+    }
+
+    // ── Toast ──
+    function toast(msg, ms=3000) {
+      const t = document.getElementById('toast');
+      t.innerText = msg; t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), ms);
+    }
+
+    // ── Screens ──
+    const loadingScreen = document.getElementById('loading-screen');
+    const hubScreen     = document.getElementById('hub-screen');
+    const statusBox     = document.getElementById('status-box');
+    const chatArea      = document.getElementById('chat-area');
+
+    function showHub(hubName, memberCount) {
+      document.getElementById('hub-title').innerText = hubName;
+      document.getElementById('hub-member-count').innerText = `${memberCount} members`;
+      loadingScreen.classList.remove('active');
+      hubScreen.classList.add('active');
+    }
+    function showLoading(msg, err) {
+      hubScreen.classList.remove('active');
+      loadingScreen.classList.add('active');
+      statusBox.innerText = msg;
+      statusBox.style.borderColor = err ? '#DC2626' : 'var(--sage)';
+      statusBox.style.color       = err ? '#DC2626' : 'var(--forest)';
+    }
+
+    // ── Chunk receive ──
+    const rxChunks = {};
+    function handleChunk(payload) {
+      const { fileId, chunkIndex, totalChunks, fileName, fileType, fileSize, chunkData, senderName } = payload;
+      if (!rxChunks[fileId]) {
+        rxChunks[fileId] = { chunks: new Array(totalChunks), received: 0, totalChunks, name: fileName, type: fileType, size: fileSize };
+        // Create receiving bubble
+        const el = document.createElement('div');
+        el.className = 'chat-message received';
+        el.id = `recv-${fileId}`;
+        el.innerHTML = `
+          <div class="chat-sender">${senderName || 'Hub member'}</div>
+          <div class="chat-bubble">
+            <img src="${getIcon(fileName)}" class="chat-icon" onerror="this.src='icon-code.png'">
+            <div class="chat-details">
+              <div class="chat-filename">${fileName}</div>
+              <div class="chat-filesize">${fmtBytes(fileSize)}</div>
+              <div class="recv-progress" id="rp-${fileId}">Receiving… 0%</div>
+              <div class="recv-bar-wrap"><div class="recv-bar" id="rb-${fileId}"></div></div>
+            </div>
+          </div>`;
+        chatArea.querySelector('.empty-text') && (chatArea.querySelector('.empty-text').style.display = 'none');
+        chatArea.appendChild(el);
+        chatArea.scrollTop = chatArea.scrollHeight;
+      }
+      const e = rxChunks[fileId];
+      e.chunks[chunkIndex] = base64ToArrayBuffer(chunkData); e.received++;
+      const pct = Math.round(e.received / totalChunks * 100);
+      const rb = document.getElementById(`rb-${fileId}`);
+      const rp = document.getElementById(`rp-${fileId}`);
+      if (rb) rb.style.width = pct + '%';
+      if (rp) rp.innerText = `Receiving… ${pct}%`;
+
+      if (e.received === totalChunks) {
+        const blob = new Blob(e.chunks, { type: e.type || 'application/octet-stream' });
+        const url  = URL.createObjectURL(blob);
+        const blk  = document.getElementById(`recv-${fileId}`);
+        if (rp) rp.remove(); if (rb) { const bw = rb.closest('div'); if (bw) bw.remove(); }
+        const btn = document.createElement('button');
+        btn.className = 'btn-save'; btn.innerText = 'Save File';
+        btn.onclick = () => {
+          const a = document.createElement('a'); a.href=url; a.download=e.name;
+          document.body.appendChild(a); a.click();
+          setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+          btn.innerText = 'Saved ✓'; btn.style.background = 'var(--forest)'; btn.disabled = true;
+        };
+        if (blk) blk.appendChild(btn);
+        chatArea.scrollTop = chatArea.scrollHeight;
+        delete rxChunks[fileId];
+      }
+    }
+
+    // ── Connect ──
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomCode  = urlParams.get('room');
+    // Mobile hub users get a random anonymous name
+    const mobileId = 'Mobile-' + Math.random().toString(36).slice(2,6).toUpperCase();
+    const clientId = 'hubclient-' + Math.random().toString(36).substr(2, 9);
+    const mobileProfile = { name: mobileId, avatar: 'icon-avatar.png' };
+
+    const socket = new WebSocket(`ws://${window.location.hostname}:5174`);
+    const eventHandlers = {};
+    socket.on = function(event, handler) { eventHandlers[event] = handler; };
+    socket.emit = function(event, payload) {
+        if (socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ event, payload }));
+        }
+    };
+    socket.onopen = () => { if (eventHandlers['connect']) eventHandlers['connect'](); };
+    socket.onmessage = async (msgEvent) => {
+        let data;
+        try { data = JSON.parse(msgEvent.data); } catch (e) { return; }
+        if (data.payload && data.payload.senderId === clientId) return;
+        if (data.event && eventHandlers[data.event]) {
+            eventHandlers[data.event](data.payload);
+        }
+    };
+    socket.onclose = () => { if (eventHandlers['disconnect']) eventHandlers['disconnect'](); };
+
+    function arrayBufferToBase64(buffer) {
+        let binary = ''; const bytes = new Uint8Array(buffer);
+        for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+        return window.btoa(binary);
+    }
+    function base64ToArrayBuffer(base64) {
+        const binary_string = window.atob(base64);
+        const len = binary_string.length; const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) bytes[i] = binary_string.charCodeAt(i);
+        return bytes.buffer;
+    }
+
+    socket.on('connect', () => {
+      if (!roomCode) return showLoading('No room code in URL. Please rescan.', true);
+      statusBox.innerText = `Joining hub ${roomCode}…`;
+      socket.emit('join-hub', { code: roomCode, profile: mobileProfile });
+    });
+
+    socket.on('hub-joined', (data) => {
+      showHub(data.hubName, data.members.length);
+    });
+
+    socket.on('hub-error', (err) => {
+      showLoading(err.message, true);
+    });
+
+    socket.on('hub-member-joined', (data) => {
+      const cnt = document.getElementById('hub-member-count');
+      if (cnt) cnt.innerText = `${data.memberCount} members`;
+      toast(`${data.name} joined`);
+    });
+
+    socket.on('hub-member-left', (data) => {
+      const cnt = document.getElementById('hub-member-count');
+      if (cnt) cnt.innerText = `${data.memberCount} members`;
+      toast(`${data.name} left`);
+    });
+
+    socket.on('hub-host-transferred', (data) => {
+      toast(`${data.newHostName} is now the host 👑`, 5000);
+    });
+
+    socket.on('hub-renamed', (data) => {
+      document.getElementById('hub-title').innerText = data.newName;
+    });
+
+    socket.on('hub-ended', () => {
+      showLoading('The hub was closed by the host.', true);
+    });
+
+    socket.on('hub-file-chunk', handleChunk);
+
+    socket.on('disconnect', () => {
+      showLoading('Connection lost. Please rescan the QR code.', true);
+    });
+
+    document.getElementById('btn-leave').addEventListener('click', () => {
+      socket.emit('leave-hub');
+      showLoading('You left the hub.', false);
+    });
+
+    function handleTransferCancel(fileId) {
+      const block = document.getElementById(`recv-${fileId}`);
+      if (block) {
+        const rp = document.getElementById(`rp-${fileId}`);
+        if (rp) rp.innerText = 'Transfer Cancelled by Peer';
+        const rb = document.getElementById(`rb-${fileId}`);
+        if (rb) { rb.style.background = '#DC2626'; }
+        setTimeout(() => { if (block) block.remove(); }, 3000);
+      }
+      delete rxChunks[fileId];
+    }
+
+    socket.on('cancel-transfer', (fileId) => handleTransferCancel(fileId));
+
+    // ── File send (chunked) ──
+    async function readSlice(blob) {
+      return new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = e => res(e.target.result); r.onerror = rej;
+        r.readAsArrayBuffer(blob);
+      });
+    }
+
+    const picker      = document.getElementById('file-picker');
+    const btnSelect   = document.getElementById('btn-select');
+    const tray        = document.getElementById('staging-tray');
+    const fnDisplay   = document.getElementById('file-name-display');
+    const btnConfirm  = document.getElementById('btn-confirm');
+    const progCont    = document.getElementById('prog-container');
+    const progBar     = document.getElementById('prog-bar');
+    let currentFiles = [];
+    let currentTransferId = null;
+    let transferCancelled = false;
+
+    btnSelect.addEventListener('click', () => picker.click());
+    picker.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        currentFiles = Array.from(e.target.files);
+        fnDisplay.innerText = currentFiles.length === 1 ? currentFiles[0].name : `${currentFiles.length} files`;
+        btnSelect.style.display = 'none'; tray.style.display = 'flex';
+        btnConfirm.style.display = ''; progCont.style.display = 'none';
+      }
+    });
+    document.getElementById('btn-cancel').addEventListener('click', () => {
+      if (currentTransferId) {
+        transferCancelled = true;
+        socket.emit('cancel-transfer', currentTransferId);
+      }
+      picker.value = ''; currentFiles = [];
+      tray.style.display = 'none'; btnSelect.style.display = '';
+    });
+
+    btnConfirm.addEventListener('click', async () => {
+      if (!currentFiles.length) return;
+      btnConfirm.style.display = 'none'; progCont.style.display = 'block'; progBar.style.width = '0%';
+      transferCancelled = false;
+
+      const files = [...currentFiles];
+      const totalFiles = files.length;
+      let filesDone = 0;
+
+      for (const file of files) {
+        if (transferCancelled) break;
+        const fileId = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+        currentTransferId = fileId;
+        const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+        const safeName = file.name.replace(/['"]/g, '');
+        const fileType = file.type || 'application/octet-stream';
+
+        // Optimistic sent bubble
+        const sentEl = document.createElement('div');
+        sentEl.className = 'chat-message sent';
+        sentEl.innerHTML = `
+          <div class="chat-sender">You</div>
+          <div class="chat-bubble">
+            <img src="${getIcon(safeName)}" class="chat-icon" onerror="this.src='icon-code.png'">
+            <div class="chat-details">
+              <div class="chat-filename">${safeName}</div>
+              <div class="chat-filesize">${fmtBytes(file.size)}</div>
+            </div>
+          </div>`;
+        chatArea.querySelector('.empty-text') && (chatArea.querySelector('.empty-text').style.display = 'none');
+        chatArea.appendChild(sentEl);
+
+        for (let i = 0; i < totalChunks; i++) {
+          if (transferCancelled) {
+            socket.emit('cancel-transfer', fileId);
+            break;
+          }
+          const start = i * CHUNK_SIZE;
+          const chunkDataBuffer = await readSlice(file.slice(start, start + CHUNK_SIZE));
+          const chunkData = arrayBufferToBase64(chunkDataBuffer);
+          socket.emit('hub-file-chunk', {
+            senderId: clientId,
+            fileId, chunkIndex: i, totalChunks,
+            fileName: safeName, fileType, fileSize: file.size, chunkData
+          });
+          const pct = ((filesDone + (i+1)/totalChunks) / totalFiles) * 100;
+          progBar.style.width = Math.min(pct, 100) + '%';
+          await new Promise(r => setTimeout(r, 16));
+        }
+        filesDone++;
+      }
+
+      currentTransferId = null;
+      setTimeout(() => {
+        picker.value = ''; currentFiles = [];
+        tray.style.display = 'none'; btnSelect.style.display = '';
+      }, 500);
+    });
+  </script>
+</body>
+</html>

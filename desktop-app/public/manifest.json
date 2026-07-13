@@ -1,0 +1,17 @@
+{
+  "name": "Direct Beam",
+  "short_name": "Direct Beam",
+  "description": "Fast local file transfer",
+  "start_url": "/mobile.html",
+  "display": "standalone",
+  "background_color": "#EAEAE1",
+  "theme_color": "#1E3528",
+  "icons": [
+    {
+      "src": "/icon-beam.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

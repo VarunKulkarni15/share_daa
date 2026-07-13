@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Figma Preview - Grid Layout</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cal+Sans&family=Instrument+Serif:ital@0;1&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Luckiest+Guy&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Pacifico&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Syne:wght@400..800&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #1E1E1E; /* Dark canvas background like Figma */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+      font-family: 'Cal Sans', sans-serif;
+    }
+
+    #figma-canvas {
+      position: relative;
+      width: 1512px;
+      height: 982px;
+      background: #C8D6C8;
+      overflow: hidden;
+      box-shadow: 0 0 50px rgba(0,0,0,0.5);
+    }
+
+    /* Background Bubbles */
+    .bubbles-1 {
+      position: absolute;
+      width: 796px;
+      height: 806px;
+      left: -100px;
+      top: -50px;
+      background: url('bubbles-1.png');
+      background-size: 100% 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .bubbles {
+      position: absolute;
+      width: 1013px;
+      height: 982px;
+      right: -200px;
+      bottom: -100px;
+      background: url('bubbles.png');
+      background-size: 100% 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Main Grid Layout */
+    .dashboard-layout {
+      position: relative;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 48px;
+      padding: 48px;
+      height: 100%;
+      box-sizing: border-box;
+    }
+
+    /* --- SIDEBAR --- */
+    .sidebar {
+      background: rgba(28, 49, 37, 0.2); /* Deep forest green glass */
+      backdrop-filter: blur(32px);
+      -webkit-backdrop-filter: blur(32px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 32px;
+      padding: 40px 32px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar-profile {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 64px;
+    }
+
+    .sidebar-profile img {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 3px solid rgba(255, 255, 255, 0.8);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+
+    .sidebar-profile div h3 {
+      margin: 0;
+      color: #1C3125;
+      font-size: 28px;
+      letter-spacing: -0.5px;
+    }
+
+    .sidebar-profile div p {
+      margin: 4px 0 0 0;
+      color: #4D6948;
+      font-size: 16px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 20px;
+      border-radius: 16px;
+      color: #1C3125;
+      font-size: 20px;
+      text-decoration: none;
+      margin-bottom: 12px;
+      transition: 0.2s;
+    }
+
+    .nav-link.active {
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .nav-link:hover:not(.active) {
+      background: rgba(255, 255, 255, 0.4);
+    }
+
+    /* QR Code Card in Sidebar */
+    .qr-card {
+      margin-top: auto;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 24px;
+      padding: 24px;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.9);
+    }
+    
+    .qr-card h4 {
+      margin: 0 0 16px 0;
+      color: #1C3125;
+      font-size: 20px;
+    }
+
+    .qr-placeholder {
+      width: 140px;
+      height: 140px;
+      background: #FFFFFF;
+      border-radius: 12px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px dashed #4D6948;
+      color: #4D6948;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+    }
+
+    /* --- MAIN CONTENT AREA --- */
+    .main-content {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header-title {
+      font-size: 56px;
+      color: #1C3125;
+      margin: 0 0 48px 0;
+      letter-spacing: -1px;
+      text-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    /* 3D Cards Container */
+    .cards-row {
+      display: flex;
+      gap: 48px;
+      margin-bottom: 48px;
+    }
+
+    /* --- DIRECT BEAM CARD (Adapted from your CSS) --- */
+    .directbeam {
+      position: relative;
+      width: 421px;
+      height: 307px;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .directbeam:hover { transform: translateY(-8px); }
+
+    .directbeam .rect-2 {
+      position: absolute;
+      left: 0%;
+      right: 0%;
+      top: 1.95%;
+      bottom: 0%;
+      background: #FFFFFF;
+      box-shadow: 0px 4px 31px rgba(0, 0, 0, 0.27);
+      border-radius: 18px;
+    }
+
+    .directbeam .rect-6 {
+      position: absolute;
+      left: 0%;
+      right: 0%;
+      top: 0%;
+      bottom: 1.95%;
+      background: linear-gradient(180deg, #779070 0%, #1C3125 100%);
+      border-radius: 18px;
+    }
+
+    .directbeam .icon-beam {
+      position: absolute;
+      height: 192px;
+      left: 24.7%;
+      right: 24.47%;
+      top: 17px;
+      background: url('icon-beam.png') no-repeat center/contain;
+      filter: drop-shadow(0px 4px 27px rgba(0, 0, 0, 0.25));
+    }
+
+    .directbeam .title {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 62.87%;
+      font-family: 'Cal Sans', sans-serif;
+      font-weight: 400;
+      font-size: 48px;
+      line-height: 62px;
+      letter-spacing: -0.5px;
+      color: #FFFFFF;
+      text-shadow: 0px 0px 34px rgba(0, 0, 0, 0.25);
+      text-align: center;
+      margin: 0;
+    }
+
+    .directbeam .rect-3 {
+      position: absolute;
+      left: 24.7%;
+      right: 24.47%;
+      top: 83.71%;
+      bottom: 7.82%;
+      background: #4D6948;
+      border-radius: 7px;
+    }
+
+    .directbeam .subtitle {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 82.74%;
+      font-family: 'Cal Sans', sans-serif;
+      font-weight: 400;
+      font-size: 20px;
+      line-height: 31px;
+      letter-spacing: -0.5px;
+      color: #ACC7A4;
+      text-align: center;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+
+    /* --- DROP HUB CARD (Adapted from your CSS) --- */
+    .drophub {
+      position: relative;
+      width: 421px;
+      height: 307px;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .drophub:hover { transform: translateY(-8px); }
+
+    .drophub .rect-7 {
+      position: absolute;
+      left: 0%;
+      right: 0%;
+      top: 1.95%;
+      bottom: -0.98%;
+      background: #FFFFFF;
+      box-shadow: 0px 4px 31px rgba(0, 0, 0, 0.25);
+      border-radius: 18px;
+    }
+
+    .drophub .rect-4 {
+      position: absolute;
+      left: 0%;
+      right: 0%;
+      top: 0.98%;
+      bottom: 0.98%;
+      background: linear-gradient(180deg, #EAE2CA 0%, #A29777 100%);
+      border-radius: 18px;
+    }
+
+    .drophub .icon-hub {
+      position: absolute;
+      left: 24.7%;
+      right: 24.47%;
+      top: 4.89%;
+      bottom: 25.41%;
+      background: url('icon-hub.png') no-repeat center/contain;
+      filter: drop-shadow(0px 4px 32px rgba(0, 0, 0, 0.25));
+    }
+
+    .drophub .title-shadow {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 63.52%;
+      font-family: 'Cal Sans', sans-serif;
+      font-weight: 400;
+      font-size: 48px;
+      line-height: 62px;
+      letter-spacing: -0.5px;
+      color: #A8A8A8;
+      text-shadow: 0px 4px 32px rgba(0, 0, 0, 0.25);
+      margin: 0;
+      text-align: center;
+    }
+
+    .drophub .title {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 62.87%;
+      font-family: 'Cal Sans', sans-serif;
+      font-weight: 400;
+      font-size: 48px;
+      line-height: 62px;
+      letter-spacing: -0.5px;
+      color: #FFFFFF;
+      margin: 0;
+      text-align: center;
+    }
+
+    .drophub .rect-5 {
+      position: absolute;
+      left: 18.05%;
+      right: 13.54%;
+      top: 83.71%;
+      bottom: 7.17%;
+      background: #696151;
+      border-radius: 7px;
+    }
+
+    .drophub .subtitle {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 82.74%;
+      font-family: 'Cal Sans', sans-serif;
+      font-weight: 400;
+      font-size: 20px;
+      line-height: 31px;
+      letter-spacing: -0.5px;
+      color: #EAE2CA;
+      text-align: center;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* --- RECENT FILES (Glassmorphism) --- */
+    .recent-files {
+      background: rgba(255, 255, 255, 0.5); /* White frosted glass */
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      border-radius: 32px;
+      flex-grow: 1;
+      padding: 32px 40px;
+      box-shadow: 0 16px 32px rgba(0,0,0,0.05);
+    }
+
+    .recent-files h3 {
+      margin: 0 0 24px 0;
+      font-size: 28px;
+      color: #1C3125;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 16px;
+      margin-bottom: 12px;
+      font-family: 'Inter', sans-serif;
+      color: #1C3125;
+      font-weight: 500;
+    }
+
+    .file-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .file-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .file-icon {
+      width: 40px;
+      height: 40px;
+      background: #1C3125;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div id="figma-canvas">
+    
+    <!-- Bubbles Background -->
+    <div class="bubbles-1"></div>
+    <div class="bubbles"></div>
+
+    <!-- Grid Layout -->
+    <div class="dashboard-layout">
+      
+      <!-- SIDEBAR -->
+      <div class="sidebar">
+        <div class="sidebar-profile">
+          <img src="icon-avatar.png" alt="Profile" onerror="this.style.display='none'">
+          <div>
+            <h3>Varun</h3>
+            <p>Ready to share</p>
+          </div>
+        </div>
+
+        <a href="#" class="nav-link active">Home</a>
+        <a href="#" class="nav-link">History</a>
+        <a href="#" class="nav-link">Settings</a>
+
+        <div class="qr-card">
+          <h4>Connect Device</h4>
+          <div class="qr-placeholder">
+            QR Code Here
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN CONTENT -->
+      <div class="main-content">
+        
+        <h1 class="header-title">Good afternoon, Varun.</h1>
+
+        <!-- 3D Cards -->
+        <div class="cards-row">
+          
+          <!-- Direct Beam -->
+          <div class="directbeam">
+            <div class="rect-2"></div>
+            <div class="rect-6"></div>
+            <div class="icon-beam"></div>
+            <p class="title">Direct Beam</p>
+            <div class="rect-3"></div>
+            <p class="subtitle">Fast 1-to-1 transfer</p>
+          </div>
+
+          <!-- Drop Hub -->
+          <div class="drophub">
+            <div class="rect-7"></div>
+            <div class="rect-4"></div>
+            <div class="icon-hub"></div>
+            <p class="title-shadow">Drop Hub</p>
+            <p class="title">Drop Hub</p>
+            <div class="rect-5"></div>
+            <p class="subtitle">Create or join workspace</p>
+          </div>
+
+        </div>
+
+        <!-- Recent Files -->
+        <div class="recent-files">
+          <h3>Recent Transfers</h3>
+          <div class="file-item">
+            <div class="file-info">
+              <div class="file-icon">VID</div>
+              <span>IMG_9042.mp4</span>
+            </div>
+            <span>Shared with iPhone • 2 mins ago</span>
+          </div>
+          <div class="file-item">
+            <div class="file-info">
+              <div class="file-icon" style="background: #696151;">ZIP</div>
+              <span>project_assets.zip</span>
+            </div>
+            <span>Received from Desktop • 1 hour ago</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // Responsive scaling to fit any window size exactly like Figma preview
+    function resizeCanvas() {
+      const canvas = document.getElementById('figma-canvas');
+      const scaleX = window.innerWidth / 1512;
+      const scaleY = window.innerHeight / 982;
+      const scale = Math.min(scaleX, scaleY) * 0.95; // 95% to leave a small margin
+      canvas.style.transform = \`scale(\${scale})\`;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+  </script>
+</body>
+</html>
