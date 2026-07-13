@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShareDaa | Architecture</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="icon" type="image/x-icon" href="icon.ico">
+  <style>
+    :root {
+      --cream: #F2EDE6;
+      --warm-white: #FDFAF5;
+      --forest: #1E3528;
+      --sage: #3D6B52;
+      --sage-light: #5A8A6A;
+      --text-muted: #8A7E6F;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Syne', sans-serif;
+      background: var(--forest);
+      color: var(--cream);
+      min-height: 100vh;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    ::-webkit-scrollbar {
+      display: none;
+    }
+
+    .nav {
+      padding: 30px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      font-family: 'Instrument Serif', serif;
+      font-size: 32px;
+      color: var(--cream);
+      text-decoration: none;
+      letter-spacing: -0.5px;
+    }
+
+    .nav-brand em {
+      color: var(--sage-light);
+      font-style: italic;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 40px auto 100px;
+      padding: 0 20px;
+    }
+
+    h1 {
+      font-family: 'Instrument Serif', serif;
+      font-size: 64px;
+      margin-bottom: 20px;
+      color: var(--warm-white);
+    }
+
+    .last-updated {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--sage-light);
+      margin-bottom: 40px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .policy-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 40px;
+      margin-bottom: 30px;
+    }
+
+    h2 {
+      font-family: 'Instrument Serif', serif;
+      font-size: 36px;
+      color: var(--warm-white);
+      margin-bottom: 20px;
+    }
+
+    p, li {
+      font-size: 16px;
+      line-height: 1.8;
+      color: rgba(255, 255, 255, 0.85);
+      margin-bottom: 16px;
+    }
+
+    ul {
+      margin-left: 20px;
+      margin-bottom: 20px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    strong {
+      color: white;
+      font-weight: 700;
+    }
+
+    .tech-pill {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 6px 14px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--cream);
+      display: inline-block;
+      margin-right: 8px;
+      margin-bottom: 12px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 40px;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="nav">
+    <a href="index.html" class="nav-brand">Share<em>Daa</em></a>
+  </nav>
+
+  <div class="container">
+    <h1>Architecture Analysis</h1>
+    <div class="last-updated">Last Updated: July 2026</div>
+
+    <div class="policy-card">
+      <p>This document provides a deep-dive analysis of the ShareDaa architecture, dissecting its unique design system, the core local routing mechanisms, and how we solved critical network edge cases.</p>
+    </div>
+
+    <div class="policy-card">
+      <h2>1. Design System & Aesthetics</h2>
+      <p>ShareDaa employs a "Premium Glassmorphic" design language, prioritizing visual depth, warmth, and fluidity over flat corporate aesthetics.</p>
+      <ul>
+        <li><strong>Typography Pairings:</strong> The UI utilizes `Instrument Serif` for headers and logos, injecting an elegant, editorial feel. This is contrasted heavily by `Syne` and `Inter` for body text, providing modern geometric readability.</li>
+        <li><strong>Aurora Gradient Orbits:</strong> Instead of static backgrounds, ShareDaa uses a 40-second rotating CSS linear gradient (`auroraOrbit`) that breathes life into the application frame.</li>
+        <li><strong>Glassmorphism:</strong> Main panels and drop zones utilize <code>rgba(255,255,255,0.4)</code> backgrounds with heavy background blur. This allows the underlying Aurora gradients to bleed through the interface dynamically.</li>
+      </ul>
+    </div>
+
+    <div class="policy-card">
+      <h2>2. Core Engine (Tauri + Sockets)</h2>
+      <p>Moving from Electron to Tauri was the pivotal shift for ShareDaa.</p>
+      <div>
+        <span class="tech-pill">Tauri v2</span>
+        <span class="tech-pill">Rust</span>
+        <span class="tech-pill">Vite</span>
+        <span class="tech-pill">Socket.io</span>
+      </div>
+      <ul>
+        <li><strong>Backend Engine:</strong> Tauri (Rust) reduces the memory footprint from ~300MB to &lt;30MB, eliminating the bundled Chromium instance while providing native OS access.</li>
+        <li><strong>The Desktop Relay:</strong> Instead of relying on slow WebRTC Data Channels and complex ICE negotiations, the Desktop app hosts its own ultra-fast WebSocket relay server (`TcpListener`) over your local LAN.</li>
+        <li><strong>Data Transport:</strong> When you send a file, it is chunked and streamed directly through this raw socket at gigabit speeds, completely bypassing internet servers, STUN relays, and cloud proxies.</li>
+      </ul>
+    </div>
+
+    <div class="policy-card">
+      <h2>3. The VPN Solution</h2>
+      <p>Previously, ShareDaa struggled when users were connected to VPNs (like NordVPN or ExpressVPN). VPNs often block the ZeroConf / mDNS UDP packets required for automatic device discovery.</p>
+      <ul>
+        <li><strong>The Pivot:</strong> We completely abandoned mDNS.</li>
+        <li><strong>QR Code Handshake:</strong> When the Desktop app starts, it fetches its true local IPv4 address (e.g., <code>192.168.1.50</code>) and generates a secure QR code.</li>
+        <li><strong>Direct Connection:</strong> When you scan the QR code with your phone, the phone bypasses the VPN routing tables entirely by hitting the specific IP address and port directly, guaranteeing a 100% reliable connection every time.</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>
+    © 2026 ShareDaa. Built for performance.
+  </footer>
+</body>
+
+</html>

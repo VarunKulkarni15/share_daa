@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShareDaa | Privacy Policy</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="icon" type="image/x-icon" href="icon.ico">
+  <style>
+    :root {
+      --cream: #F2EDE6;
+      --warm-white: #FDFAF5;
+      --forest: #1E3528;
+      --sage: #3D6B52;
+      --sage-light: #5A8A6A;
+      --text-muted: #8A7E6F;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Syne', sans-serif;
+      background: var(--forest);
+      color: var(--cream);
+      min-height: 100vh;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    ::-webkit-scrollbar {
+      display: none;
+    }
+
+    .nav {
+      padding: 30px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-brand {
+      font-family: 'Instrument Serif', serif;
+      font-size: 32px;
+      color: var(--cream);
+      text-decoration: none;
+      letter-spacing: -0.5px;
+    }
+
+    .nav-brand em {
+      color: var(--sage-light);
+      font-style: italic;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 40px auto 100px;
+      padding: 0 20px;
+    }
+
+    h1 {
+      font-family: 'Instrument Serif', serif;
+      font-size: 64px;
+      margin-bottom: 20px;
+      color: var(--warm-white);
+    }
+
+    .last-updated {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--sage-light);
+      margin-bottom: 40px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .policy-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 40px;
+      margin-bottom: 30px;
+    }
+
+    h2 {
+      font-family: 'Instrument Serif', serif;
+      font-size: 36px;
+      color: var(--warm-white);
+      margin-bottom: 20px;
+    }
+
+    p, li {
+      font-size: 16px;
+      line-height: 1.8;
+      color: rgba(255, 255, 255, 0.85);
+      margin-bottom: 16px;
+    }
+
+    ul {
+      margin-left: 20px;
+      margin-bottom: 20px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    strong {
+      color: white;
+      font-weight: 700;
+    }
+
+    a {
+      color: var(--sage-light);
+      text-decoration: none;
+      border-bottom: 1px solid var(--sage-light);
+      transition: all 0.3s;
+    }
+
+    a:hover {
+      color: white;
+      border-bottom-color: white;
+    }
+
+    footer {
+      text-align: center;
+      padding: 40px;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="nav">
+    <a href="index.html" class="nav-brand">Share<em>Daa</em></a>
+  </nav>
+
+  <div class="container">
+    <h1>Privacy Policy</h1>
+    <div class="last-updated">Last Updated: July 2026</div>
+
+    <div class="policy-card">
+      <p>At <strong>ShareDaa</strong>, we believe that true privacy is built into the architecture, not just written in a legal document.</p>
+      <p>Because ShareDaa is a <strong>True Peer-to-Peer (P2P)</strong> application designed exclusively for your local network, our privacy policy is incredibly simple: <strong>We collect absolutely nothing.</strong></p>
+    </div>
+
+    <div class="policy-card">
+      <h2>1. Zero Cloud Architecture</h2>
+      <p>ShareDaa does not use third-party cloud servers to route, store, or relay your files.</p>
+      <ul>
+        <li><strong>Direct Transfers:</strong> When you send a file, the data travels directly from your device to the recipient's device using raw, local WebSockets over your internal Wi-Fi network.</li>
+        <li><strong>No Middlemen:</strong> Your files never leave your local LAN. There are no STUN/TURN relays, no cloud storage, and no proxy servers.</li>
+      </ul>
+    </div>
+
+    <div class="policy-card">
+      <h2>2. Zero Data Collection</h2>
+      <p>Because we do not operate a centralized backend, we do not have the technical capability to collect:</p>
+      <ul>
+        <li>Your IP address or location data.</li>
+        <li>The names, sizes, or contents of the files you transfer.</li>
+        <li>Usage analytics, metadata, or crash reports.</li>
+        <li>Account information (ShareDaa requires absolutely zero sign-ups or logins).</li>
+      </ul>
+    </div>
+
+    <div class="policy-card">
+      <h2>3. Secure Local Routing</h2>
+      <p>ShareDaa generates a dynamic, one-time 4-digit PIN and QR code to pair devices. These codes contain your local IPv4 address and allow devices to establish a direct, closed-circuit connection within your home or office network.</p>
+    </div>
+
+    <div class="policy-card">
+      <h2>4. Open Source & Verifiable</h2>
+      <p>ShareDaa's source code is completely public. We encourage security researchers and users to audit our codebase to independently verify that no telemetry, trackers, or hidden network calls exist.</p>
+      <p><a href="https://github.com/VarunKulkarni15/share_daa" target="_blank">View Source Code on GitHub</a></p>
+    </div>
+  </div>
+
+  <footer>
+    © 2026 ShareDaa. Built for performance.
+  </footer>
+</body>
+
+</html>
