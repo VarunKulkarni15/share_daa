@@ -46,8 +46,8 @@
       scrollbar-width: none;
     }
 
-    /* ── PERFECTLY PINNED VIDEO ── */
-    #hero-video {
+    /* ── PERFECTLY PINNED BACKGROUND IMAGE ── */
+    #site-bg {
       position: fixed;
       top: 0;
       left: 0;
@@ -452,8 +452,7 @@
 
 <body>
 
-  <!-- Auto-play removed, UI loads instantly with video frozen on last frame -->
-  <video id="hero-video" src="trimmed-rocket.mp4" muted playsinline></video>
+  <img id="site-bg" src="sitebg.png" alt="">
 
   <div id="ui-layer">
 
@@ -540,24 +539,11 @@
   </div>
 
   <script>
-    const video = document.getElementById('hero-video');
     const body = document.body;
-    let uiRevealed = false;
 
-    function triggerUIReveal() {
-      if (uiRevealed) return;
-      uiRevealed = true;
-      body.classList.add('video-ended');
-      initScrollReveal();
-    }
-
-    // Immediately trigger UI reveal without waiting for video
-    triggerUIReveal();
-
-    // Jump the video to the final frame once metadata loads
-    video.addEventListener('loadedmetadata', () => {
-      video.currentTime = Math.max(0, video.duration - 0.1);
-    });
+    // Immediately reveal UI (no video to wait for)
+    body.classList.add('video-ended');
+    initScrollReveal();
 
     function initScrollReveal() {
       const revealElements = document.querySelectorAll('.reveal-item');
