@@ -633,11 +633,26 @@
     <div class="header">
       <div>
         <div class="header-title">Direct Beam</div>
-        <div class="header-subtitle">
-          <div class="pulse-dot"></div> Connected to Desktop
+        <div class="header-subtitle" style="cursor: pointer;" onclick="document.getElementById('security-modal').style.display='flex'">
+          <div class="pulse-dot"></div> Connected to Desktop <span>🔒</span>
         </div>
       </div>
       <button class="btn-disconnect" id="btn-disconnect">End Beam</button>
+    </div>
+
+    <!-- Security Notice Modal -->
+    <div id="security-modal" style="display:none; position:fixed; inset:0; background:rgba(28,49,37,0.8); backdrop-filter:blur(10px); z-index:99999; flex-direction:column; align-items:center; justify-content:center; padding:20px; opacity:0; transition:opacity 0.3s; animation:fadeIn 0.3s forwards;">
+      <style>@keyframes fadeIn { to { opacity: 1; } }</style>
+      <div style="background:rgba(255,255,255,0.95); padding:32px 24px; border-radius:24px; text-align:center; box-shadow:0 16px 48px rgba(0,0,0,0.2); max-width:340px; border:1px solid rgba(255,255,255,1);">
+        <div style="font-size:48px; margin-bottom:16px;">🔒</div>
+        <h3 style="font-family:'Instrument Serif', serif; font-size:32px; color:var(--forest); margin-bottom:12px; line-height:1;">Local Wi-Fi Mode Active</h3>
+        <p style="font-family:'Inter', sans-serif; font-size:15px; color:var(--text-muted); line-height:1.5; margin-bottom:24px;">
+          Your files are transferring directly over your home network. Because this bypasses the public internet to keep your files <strong>100% private</strong>, your browser may label the connection as "Not Secure". 
+          <br><br>
+          <span style="color:var(--sage); font-weight:700;">This is perfectly normal and actually the most secure way to transfer files.</span>
+        </p>
+        <button onclick="document.getElementById('security-modal').style.display='none'" style="background:var(--forest); color:white; border:none; padding:14px 32px; border-radius:14px; font-weight:700; font-family:'Syne', sans-serif; font-size:16px; cursor:pointer; width:100%;">Got it, thanks!</button>
+      </div>
     </div>
 
     <div class="chat-area" id="chat-area">
@@ -1008,6 +1023,13 @@
 
     socket.on('join-success', () => {
       showTransferScreen();
+      if (!localStorage.getItem('security_notice_seen')) {
+        setTimeout(() => {
+          const modal = document.getElementById('security-modal');
+          if (modal) modal.style.display = 'flex';
+          localStorage.setItem('security_notice_seen', 'true');
+        }, 500);
+      }
     });
 
     socket.on('join-error', (msg) => {
