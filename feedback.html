@@ -177,6 +177,9 @@
     
     <p>Describe the bug, feedback, or any other issue you've encountered. We'll look into it right away!</p>
 
+    <!-- HONEYPOT FIELD (Invisible to humans, bots will fill this in and get blocked) -->
+    <input type="text" id="website-url" style="display:none" tabindex="-1" autocomplete="off">
+
     <div class="error-msg" id="error-msg"></div>
 
     <textarea id="bug-text" placeholder="What went wrong? Please be as detailed as possible..." maxlength="2000"></textarea>
@@ -208,6 +211,15 @@
     document.getElementById('file-input').addEventListener('change', function(e) {
       if (e.target.files && e.target.files[0]) {
         const file = e.target.files[0];
+        
+        // STRICT MIME TYPE CHECKING (Prevents malicious files masquerading as images)
+        const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        if (!validTypes.includes(file.type)) {
+          showError("Invalid file type. Only JPG, PNG, and WEBP images are allowed.");
+          this.value = '';
+          return;
+        }
+
         if (file.size > 5 * 1024 * 1024) {
           showError("Image must be under 5MB.");
           this.value = '';
@@ -226,6 +238,22 @@
     }
 
     async function submitReport() {
+      // 1. HONEYPOT CHECK
+      const honeypot = document.getElementById('website-url').value;
+      if (honeypot) {
+        // A bot filled in the hidden field! Silently pretend it succeeded.
+        document.getElementById('form-container').style.display = 'none';
+        document.getElementById('success-container').style.display = 'block';
+        return;
+      }
+
+      // 2. COOLDOWN CHECK (1 report per 5 minutes per browser)
+      const lastSubmit = localStorage.getItem('last_bug_report');
+      if (lastSubmit && (Date.now() - parseInt(lastSubmit)) < 5 * 60 * 1000) {
+        showError("You're doing that too fast! Please wait a few minutes before submitting another report.");
+        return;
+      }
+
       const text = document.getElementById('bug-text').value;
       if (!text.trim()) {
         showError("Please describe the issue.");
@@ -252,6 +280,7 @@
 
         // If it's 401, it means the dummy webhook failed, but we show success for testing
         if (res.ok || res.status === 401 || res.status === 404) {
+          localStorage.setItem('last_bug_report', Date.now().toString());
           document.getElementById('form-container').style.display = 'none';
           document.getElementById('success-container').style.display = 'block';
         } else {
