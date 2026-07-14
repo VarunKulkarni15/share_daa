@@ -157,7 +157,7 @@ function App() {
     };
     checkVpn();
 
-    const socket = new WebSocket('ws://localhost:5174');
+    const socket = new WebSocket('ws://localhost:5174/ws');
     socket.binaryType = 'arraybuffer';
     socket.onopen = () => console.log('Connected to Rust WebSocket relay');
     socket.onmessage = (e) => {
@@ -240,7 +240,7 @@ function App() {
         isConnectedRef.current = true;
         setBeamState('connected');
         sessionIdRef.current = 'session-' + Date.now();
-        socket.send(JSON.stringify({ event: 'join-success', payload: { sessionId: sessionIdRef.current } }));
+        socket.send(JSON.stringify({ event: 'join-success', payload: { sessionId: sessionIdRef.current, desktopName: settingsRef.current.deviceName } }));
         showToast("Device connected successfully!");
       } else if (data.event === 'join-success') {
         isConnectedRef.current = true;

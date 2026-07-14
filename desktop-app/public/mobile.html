@@ -921,7 +921,7 @@
     //  NATIVE WEBSOCKET CONNECTION (Replaces socket.io)
     // ══════════════════════════════════════════════════
     const clientId = 'mobile-' + Math.random().toString(36).substr(2, 9);
-    const socket = new WebSocket(`ws://${window.location.hostname}:5174`);
+    const socket = new WebSocket(`ws://${window.location.hostname}:5174/ws`);
     const eventHandlers = {};
 
     socket.on = function (event, handler) {
@@ -1325,7 +1325,7 @@
         Because it bypasses the internet for maximum speed and privacy, your browser may say "Not Secure". This is perfectly normal and 100% safe.
       </p>
       <div style="margin-bottom:24px;">
-        <a href="https://sharedaa.varunkulkarni.dpdns.org/privacy-policy" target="_blank" style="color:var(--forest); font-family:'Inter'; font-weight:600; text-decoration:underline;">Privacy Policy</a>
+        <a href="https://sharedaa.varunkulkarni.dpdns.org/privacy.html" target="_blank" style="color:var(--forest); font-family:'Inter'; font-weight:600; text-decoration:underline;">Privacy Policy</a>
       </div>
       <button onclick="document.getElementById('security-modal').style.display='none';" style="width:100%; background:var(--forest); color:white; padding:16px; border:none; border-radius:16px; font-weight:700; font-size:18px; cursor:pointer;">I Understand</button>
     </div>
