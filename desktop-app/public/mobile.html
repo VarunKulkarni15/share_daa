@@ -620,12 +620,21 @@
     <div class="logo-text">Share<em>Daa</em></div>
     <div class="status-box" id="status-box">Connecting to Desktop...</div>
     <div id="manual-pin-entry" style="display:none; margin-top:24px; flex-direction:column; align-items:center;">
-      <p style="color:var(--forest); font-family:'Inter'; margin-bottom:12px; font-weight:600;">Enter PIN from Desktop</p>
+      <p style="color:var(--forest); font-family:'Inter'; margin-bottom:12px; font-weight:600;">Enter PIN from Desktop
+      </p>
       <div style="display:flex; gap:12px; justify-content:center;">
-        <input type="tel" id="manual-pin-input" placeholder="0000" maxlength="4" style="font-size:32px; letter-spacing:16px; text-align:center; padding:16px; border-radius:16px; border:2px solid var(--sage); width:200px; font-family:'Cal Sans', sans-serif; background:rgba(255,255,255,0.8); outline:none;">
+        <input type="tel" id="manual-pin-input" placeholder="0000" maxlength="4"
+          style="font-size:32px; letter-spacing:16px; text-align:center; padding:16px; border-radius:16px; border:2px solid var(--sage); width:200px; font-family:'Cal Sans', sans-serif; background:rgba(255,255,255,0.8); outline:none;">
       </div>
-      <button id="btn-manual-connect" style="margin-top:20px; width:100%; background:var(--forest); color:white; padding:16px; border:none; border-radius:16px; font-weight:700; font-size:18px; cursor:pointer;">Connect Device</button>
+      <button id="btn-manual-connect"
+        style="margin-top:20px; width:100%; background:var(--forest); color:white; padding:16px; border:none; border-radius:16px; font-weight:700; font-size:18px; cursor:pointer;">Connect
+        Device</button>
     </div>
+    
+    <button onclick="window.location.href='https://sharedaa.varunkulkarni.dpdns.org/feedback.html'" style="margin-top:24px; background:transparent; border:none; color:var(--sage); font-weight:600; cursor:pointer; text-decoration:underline; font-size:14px; display:flex; align-items:center; gap:6px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      Report a Bug / Feedback
+    </button>
   </div>
 
   <!-- ══════════ TRANSFER SCREEN ══════════ -->
@@ -638,6 +647,12 @@
         </div>
       </div>
       <button class="btn-disconnect" id="btn-disconnect">End Beam</button>
+    </div>
+
+    <div style="display:flex; justify-content:center; margin-bottom: 12px;">
+      <button onclick="window.location.href='https://sharedaa.varunkulkarni.dpdns.org/feedback.html'" style="background:transparent; border:none; color:var(--sage); font-weight:600; cursor:pointer; text-decoration:underline; font-size:13px; display:flex; align-items:center; gap:6px;">
+        Report a Bug / Feedback
+      </button>
     </div>
 
     <div class="chat-area" id="chat-area">
@@ -970,7 +985,7 @@
     const urlParams = new URLSearchParams(window.location.search);
     let pin = urlParams.get('pin');
     if (!pin) pin = localStorage.getItem('saved_pin');
-    
+
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     let deviceName = localStorage.getItem('victno_name') || 'victno'; // Fallback to their chosen name
 
@@ -980,7 +995,7 @@
       statusBox.style.borderColor = 'var(--sage)';
       document.getElementById('manual-pin-entry').style.display = 'none';
       socket.emit('join-beam', { pin: targetPin, deviceName });
-      
+
       setTimeout(() => {
         if (loadingScreen.classList.contains('active') && !statusBox.innerText.includes('Invalid') && !statusBox.innerText.includes('lost')) {
           statusBox.innerText = 'Invalid PIN or Desktop disconnected.';
@@ -1275,7 +1290,7 @@
               progressBar.style.width = Math.min(globalPct, 100) + '%';
             });
           }
-          
+
           while (socket.bufferedAmount > 2 * 1024 * 1024) {
             await new Promise(r => setTimeout(r, 20)); // Backpressure
           }
@@ -1315,20 +1330,29 @@
     }
   </script>
 
-  <div id="security-modal" style="display:flex; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; justify-content:center; align-items:center;">
-    <div style="background:white; border-radius:24px; padding:32px; width:90%; max-width:400px; text-align:center; box-shadow:0 12px 48px rgba(0,0,0,0.2);">
+  <div id="security-modal"
+    style="display:flex; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; justify-content:center; align-items:center;">
+    <div
+      style="background:white; border-radius:24px; padding:32px; width:90%; max-width:400px; text-align:center; box-shadow:0 12px 48px rgba(0,0,0,0.2);">
       <h3 style="font-size:24px; font-weight:700; margin-bottom:16px;">100% Offline Mode</h3>
       <p style="font-size:16px; color:rgba(28,49,37,0.7); margin-bottom:16px; font-family:'Inter'; line-height:1.5;">
-        This app is running directly from your Desktop PC. No internet is required and your files never touch the cloud. ShareDaa holds no servers to store your data.
+        This app is running directly from your Desktop PC. No internet is required and your files never touch the cloud.
+        ShareDaa holds no servers to store your data.
       </p>
       <p style="font-size:14px; color:rgba(28,49,37,0.6); margin-bottom:24px; font-family:'Inter'; line-height:1.5;">
-        Because it bypasses the internet for maximum speed and privacy, your browser may say "Not Secure". This is perfectly normal and 100% safe.
+        Because it bypasses the internet for maximum speed and privacy, your browser may say "Not Secure". This is
+        perfectly normal and 100% safe.
       </p>
       <div style="margin-bottom:24px;">
-        <a href="https://sharedaa.varunkulkarni.dpdns.org/privacy.html" target="_blank" style="color:var(--forest); font-family:'Inter'; font-weight:600; text-decoration:underline;">Privacy Policy</a>
+        <a href="https://sharedaa.varunkulkarni.dpdns.org/privacy.html" target="_blank"
+          style="color:var(--forest); font-family:'Inter'; font-weight:600; text-decoration:underline;">Privacy
+          Policy</a>
       </div>
-      <button onclick="document.getElementById('security-modal').style.display='none';" style="width:100%; background:var(--forest); color:white; padding:16px; border:none; border-radius:16px; font-weight:700; font-size:18px; cursor:pointer;">I Understand</button>
+      <button onclick="document.getElementById('security-modal').style.display='none';"
+        style="width:100%; background:var(--forest); color:white; padding:16px; border:none; border-radius:16px; font-weight:700; font-size:18px; cursor:pointer;">I
+        Understand</button>
     </div>
   </div>
 </body>
+
 </html>

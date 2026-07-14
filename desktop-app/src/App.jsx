@@ -1192,6 +1192,12 @@ function App() {
                     </div>
                   </div>
                 </div>
+
+                <div className="setting-row" style={{ borderBottom: 'none', paddingBottom: 0, marginTop: '24px', paddingTop: '24px', borderTop: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'center' }}>
+                  <button onClick={() => invoke('open_browser_url', { url: 'https://sharedaa.varunkulkarni.dpdns.org/feedback.html' }).catch(e => showToast("Could not open browser."))} style={{ background: '#FCE8E8', color: '#D93838', padding: '12px 24px', borderRadius: '12px', border: 'none', fontWeight: 600, fontSize: '15px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: '0.2s' }}>
+                    <AlertTriangle size={18} /> Report a Bug / Feedback
+                  </button>
+                </div>
               </div>
             )}
 
@@ -1237,6 +1243,7 @@ function App() {
           </div>
         </div>
       )}
+
     </div>
   );
 }
