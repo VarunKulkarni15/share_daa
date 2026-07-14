@@ -354,24 +354,48 @@ function App() {
     if (msg.saved) return;
     const chunks = fileChunksRef.current[msg.id];
 
-    if (!chunks) {
-      showToast("File data not found. Session may have been cleared.");
-      return;
-    }
 
     try {
-      const blobOrFile = new Blob(chunks, { type: 'application/octet-stream' });
-      const url = URL.createObjectURL(blobOrFile);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = msg.name;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      if ('__TAURI_INTERNALS__' in window) {
+        const { save } = await import('@tauri-apps/plugin-dialog');
+        const filePath = await save({ defaultPath: msg.name });
+        if (!filePath) return;
 
-      setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, saved: true } : m));
-      showToast("File saved successfully!");
+        showToast("Saving file...");
+        const chunks = fileChunksRef.current[msg.id];
+        if (!chunks) return;
+
+        let isFirst = true;
+        for (const chunk of chunks) {
+          await invoke('write_file_chunk', {
+            path: filePath,
+            data: Array.from(chunk),
+            append: !isFirst
+          });
+          isFirst = false;
+        }
+        setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, saved: true } : m));
+        showToast("File saved successfully!");
+      } else {
+        // Fallback for non-Tauri web browser
+        const chunks = fileChunksRef.current[msg.id];
+        if (!chunks) {
+          showToast("File data not found. Session may have been cleared.");
+          return;
+        }
+        const blobOrFile = new Blob(chunks, { type: 'application/octet-stream' });
+        const url = URL.createObjectURL(blobOrFile);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = msg.name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, saved: true } : m));
+        showToast("File saved successfully!");
+      }
     } catch (e) {
       if (e.name !== 'AbortError') showToast("Error saving file: " + e.message);
     }
@@ -382,29 +406,59 @@ function App() {
     if (unSaved.length === 0) return;
 
     try {
-      showToast("Zipping files...");
-      const JSZip = (await import('jszip')).default;
-      const zip = new JSZip();
-      
-      for (const msg of unSaved) {
-        const chunks = fileChunksRef.current[msg.id];
-        if (!chunks) continue;
-        const blobOrFile = new Blob(chunks, { type: 'application/octet-stream' });
-        zip.file(msg.name, blobOrFile);
-      }
-      
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
-      const url = URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `ShareDaa_Transfer_${Date.now()}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      if ('__TAURI_INTERNALS__' in window) {
+        // Use native Tauri dialog to pick a folder silently (no browser prompts!)
+        const { open } = await import('@tauri-apps/plugin-dialog');
+        const folder = await open({ directory: true });
+        if (!folder) return; // user cancelled
 
-      setMessages(prev => prev.map(m => unSaved.some(u => u.id === m.id) ? { ...m, saved: true } : m));
-      showToast("Files saved successfully as ZIP!");
+        showToast("Saving files...");
+        
+        for (const msg of unSaved) {
+          const chunks = fileChunksRef.current[msg.id];
+          if (!chunks) continue;
+
+          let isFirst = true;
+          const slash = folder.includes('\\') ? '\\' : '/';
+          const filePath = `${folder}${slash}${msg.name}`;
+
+          for (const chunk of chunks) {
+            await invoke('write_file_chunk', {
+              path: filePath,
+              data: Array.from(chunk),
+              append: !isFirst
+            });
+            isFirst = false;
+          }
+          setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, saved: true } : m));
+        }
+        showToast("All files saved successfully!");
+      } else {
+        // Fallback for non-Tauri (web)
+        showToast("Zipping files...");
+        const JSZip = (await import('jszip')).default;
+        const zip = new JSZip();
+        
+        for (const msg of unSaved) {
+          const chunks = fileChunksRef.current[msg.id];
+          if (!chunks) continue;
+          const blobOrFile = new Blob(chunks, { type: 'application/octet-stream' });
+          zip.file(msg.name, blobOrFile);
+        }
+        
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(zipBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ShareDaa_Transfer_${Date.now()}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        setMessages(prev => prev.map(m => unSaved.some(u => u.id === m.id) ? { ...m, saved: true } : m));
+        showToast("Files saved successfully as ZIP!");
+      }
     } catch (e) {
       showToast("Error saving files: " + e.message);
     }
