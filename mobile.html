@@ -633,7 +633,7 @@
     <div class="header">
       <div>
         <div class="header-title">Direct Beam</div>
-        <div class="header-subtitle" style="cursor: pointer;" onclick="document.getElementById('security-modal').style.display='flex'">
+        <div class="header-subtitle" id="connection-subtitle" style="cursor: pointer;" onclick="document.getElementById('security-modal').style.display='flex'">
           <div class="pulse-dot"></div> Connected to Desktop <span>🔒</span>
         </div>
       </div>
@@ -914,7 +914,7 @@
         const a = document.createElement('a');
         a.href = url; a.download = name;
         document.body.appendChild(a); a.click();
-        setTimeout(() => { document.body.removeChild(a); }, 1000);
+        setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
         btn.innerText = 'Saved ✓';
         btn.style.background = 'var(--forest)';
         btn.disabled = true;
@@ -1029,7 +1029,12 @@
       }
     });
 
-    socket.on('join-success', () => {
+    socket.on('join-success', (payload) => {
+      const hostName = (payload && payload.hostName) ? payload.hostName : 'Desktop';
+      const subtitle = document.getElementById('connection-subtitle');
+      if (subtitle) {
+        subtitle.innerHTML = `<div class="pulse-dot"></div> Connected to <strong>${hostName}</strong> <span>🔒</span>`;
+      }
       showTransferScreen();
       if (!localStorage.getItem('security_notice_seen')) {
         setTimeout(() => {
@@ -1044,13 +1049,27 @@
       showLoadingScreen(msg, true);
     });
 
+    // Clean up all remaining OPFS files
+    async function cleanupOPFS() {
+      try {
+        if (navigator.storage && navigator.storage.getDirectory) {
+          const root = await navigator.storage.getDirectory();
+          for await (const [name] of root) {
+            try { await root.removeEntry(name); } catch(e) {}
+          }
+        }
+      } catch(e) { console.warn('OPFS full cleanup:', e); }
+    }
+
     socket.on('disconnect-beam', () => {
       showLoadingScreen('Host ended the Beam.', true);
       localStorage.removeItem('saved_pin');
+      cleanupOPFS();
     });
 
     socket.on('disconnect', () => {
       showLoadingScreen('Connection lost. Please rescan.', true);
+      cleanupOPFS();
     });
 
     // ── Disconnect button ──
@@ -1058,6 +1077,7 @@
       socket.emit('disconnect-beam');
       showLoadingScreen('Disconnected.', true);
       localStorage.removeItem('saved_pin');
+      cleanupOPFS();
     });
 
     function handleTransferCancel(fileId) {
@@ -1143,6 +1163,7 @@
           if (streamInfo) {
             await streamInfo.writable.close();
             fileObj = await streamInfo.handle.getFile();
+            delete incomingStreams[fileId];
           } else {
             fileObj = new Blob(entry.chunks, { type: entry.type || 'application/octet-stream' });
           }
