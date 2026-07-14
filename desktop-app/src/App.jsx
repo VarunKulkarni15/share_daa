@@ -382,37 +382,31 @@ function App() {
     if (unSaved.length === 0) return;
 
     try {
-      if ('showDirectoryPicker' in window) {
-        // Ask for a directory once
-        const dirHandle = await window.showDirectoryPicker({
-          mode: 'readwrite'
-        });
-        
-        // Save each file silently into the chosen directory
-        for (const msg of unSaved) {
-          const chunks = fileChunksRef.current[msg.id];
-          if (!chunks) continue;
-          
-          const blobOrFile = new Blob(chunks, { type: 'application/octet-stream' });
-          const fileHandle = await dirHandle.getFileHandle(msg.name, { create: true });
-          const writable = await fileHandle.createWritable();
-          await writable.write(blobOrFile);
-          await writable.close();
-          
-          setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, saved: true } : m));
-        }
-        showToast("All files saved successfully!");
-      } else {
-        // Fallback
-        let delay = 0;
-        for (const msg of unSaved) {
-          setTimeout(() => saveFile(msg), delay);
-          delay += 800; // stagger downloads slightly
-        }
-        showToast("All files saved successfully!");
+      showToast("Zipping files...");
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+      
+      for (const msg of unSaved) {
+        const chunks = fileChunksRef.current[msg.id];
+        if (!chunks) continue;
+        const blobOrFile = new Blob(chunks, { type: 'application/octet-stream' });
+        zip.file(msg.name, blobOrFile);
       }
+      
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ShareDaa_Transfer_${Date.now()}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      setMessages(prev => prev.map(m => unSaved.some(u => u.id === m.id) ? { ...m, saved: true } : m));
+      showToast("Files saved successfully as ZIP!");
     } catch (e) {
-      if (e.name !== 'AbortError') showToast("Error saving files: " + e.message);
+      showToast("Error saving files: " + e.message);
     }
   };
 
