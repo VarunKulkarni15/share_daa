@@ -1154,6 +1154,9 @@ function App() {
                       <button onClick={() => invoke('open_browser_url', { url: 'https://sharedaa.varunkulkarni.dpdns.org/privacy.html' }).catch(err => showToast("Could not open browser."))} style={{ background: '#3D6B52', color: 'white', padding: '10px 16px', borderRadius: '8px', border: 'none', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         Read Privacy Policy <Link size={14} />
                       </button>
+                      <button onClick={() => invoke('open_browser_url', { url: 'https://sharedaa.varunkulkarni.dpdns.org/terms.html' }).catch(err => showToast("Could not open browser."))} style={{ background: '#3D6B52', color: 'white', padding: '10px 16px', borderRadius: '8px', border: 'none', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        Terms of Service <Link size={14} />
+                      </button>
                       <button onClick={() => invoke('open_browser_url', { url: 'https://sharedaa.varunkulkarni.dpdns.org/' }).catch(err => showToast("Could not open browser."))} style={{ background: 'white', color: '#3D6B52', padding: '10px 16px', borderRadius: '8px', border: '1px solid #3D6B52', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         Visit Website <Link size={14} />
                       </button>
