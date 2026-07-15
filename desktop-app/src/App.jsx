@@ -368,7 +368,7 @@ function App() {
         for (const chunk of chunks) {
           await invoke('write_file_chunk', {
             path: filePath,
-            data: Array.from(chunk),
+            data: Array.from(new Uint8Array(chunk)),
             append: !isFirst
           });
           isFirst = false;
@@ -396,7 +396,7 @@ function App() {
         showToast("File saved successfully!");
       }
     } catch (e) {
-      if (e.name !== 'AbortError') showToast("Error saving file: " + e.message);
+      if (e.name !== 'AbortError') showToast("Error saving file: " + (e.message || e));
     }
   };
 
@@ -424,7 +424,7 @@ function App() {
           for (const chunk of chunks) {
             await invoke('write_file_chunk', {
               path: filePath,
-              data: Array.from(chunk),
+              data: Array.from(new Uint8Array(chunk)),
               append: !isFirst
             });
             isFirst = false;
@@ -459,11 +459,12 @@ function App() {
         showToast("Files saved successfully as ZIP!");
       }
     } catch (e) {
-      showToast("Error saving files: " + e.message);
+      showToast("Error saving files: " + (e.message || e));
     }
   };
 
   useEffect(() => {
+    const handleGlobalDragEnter = (e) => { e.preventDefault(); setIsDragging(true); };
     const handleGlobalDragOver = (e) => { e.preventDefault(); setIsDragging(true); };
     const handleGlobalDragLeave = (e) => { e.preventDefault(); setIsDragging(false); };
     const handleGlobalDrop = (e) => {
@@ -473,10 +474,12 @@ function App() {
         setStagedFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]);
       }
     };
+    window.addEventListener('dragenter', handleGlobalDragEnter);
     window.addEventListener('dragover', handleGlobalDragOver);
     window.addEventListener('dragleave', handleGlobalDragLeave);
     window.addEventListener('drop', handleGlobalDrop);
     return () => {
+      window.removeEventListener('dragenter', handleGlobalDragEnter);
       window.removeEventListener('dragover', handleGlobalDragOver);
       window.removeEventListener('dragleave', handleGlobalDragLeave);
       window.removeEventListener('drop', handleGlobalDrop);
@@ -1027,14 +1030,14 @@ function App() {
 
                     {/* DROP ZONE (Footer) */}
                     <div className="drop-zone" style={{ marginTop: '24px', height: '140px', background: isDragging ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.4)', transition: '0.2s', padding: '24px', flexDirection: 'row', gap: '24px' }}>
-                      <input type="file" multiple ref={fileInputRef} onChange={handleFileSelect} style={{ position: 'absolute', width: '1px', height: '1px', opacity: 0, overflow: 'hidden' }} />
                       <div style={{ flex: 1, textAlign: 'left' }}>
                         <div style={{ fontSize: '24px', fontWeight: 600 }}>Drop files here</div>
                         <div style={{ fontFamily: 'Inter', color: 'rgba(28,49,37,0.7)', marginTop: '4px', fontSize: '15px' }}>Drag multiple files to send them as a batch.</div>
                       </div>
-                      <button onClick={() => fileInputRef.current.click()} className="beam-btn" style={{ padding: '12px 24px', fontSize: '16px' }}>
+                      <label className="beam-btn" style={{ padding: '12px 24px', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <input type="file" multiple onChange={handleFileSelect} style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }} />
                         <Plus size={18} /> Browse Files
-                      </button>
+                      </label>
                     </div>
 
                   </div>
