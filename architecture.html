@@ -161,7 +161,7 @@
       <h2>1. Design System & Aesthetics</h2>
       <p>ShareDaa employs a "Premium Glassmorphic" design language, prioritizing visual depth, warmth, and fluidity over flat corporate aesthetics.</p>
       <ul>
-        <li><strong>Typography Pairings:</strong> The UI utilizes `Instrument Serif` for headers and logos, injecting an elegant, editorial feel. This is contrasted heavily by `Syne` and `Inter` for body text, providing modern geometric readability.</li>
+        <li><strong>Typography Pairings:</strong> The UI utilizes `Instrument Serif` for headers and logos, injecting an elegant, editorial feel. This is contrasted heavily by `Cal Sans` and `Inter` for body text, providing modern geometric readability.</li>
         <li><strong>Aurora Gradient Orbits:</strong> Instead of static backgrounds, ShareDaa uses a 40-second rotating CSS linear gradient (`auroraOrbit`) that breathes life into the application frame.</li>
         <li><strong>Glassmorphism:</strong> Main panels and drop zones utilize <code>rgba(255,255,255,0.4)</code> backgrounds with heavy background blur. This allows the underlying Aurora gradients to bleed through the interface dynamically.</li>
       </ul>
@@ -174,12 +174,12 @@
         <span class="tech-pill">Tauri v2</span>
         <span class="tech-pill">Rust</span>
         <span class="tech-pill">Vite</span>
-        <span class="tech-pill">Socket.io</span>
+        <span class="tech-pill">Raw WebSockets</span>
       </div>
       <ul>
         <li><strong>Backend Engine:</strong> Tauri (Rust) reduces the memory footprint from ~300MB to &lt;30MB, eliminating the bundled Chromium instance while providing native OS access.</li>
-        <li><strong>The Desktop Relay:</strong> Instead of relying on slow WebRTC Data Channels and complex ICE negotiations, the Desktop app hosts its own ultra-fast WebSocket relay server (`TcpListener`) over your local LAN.</li>
-        <li><strong>Data Transport:</strong> When you send a file, it is chunked and streamed directly through this raw socket at gigabit speeds, completely bypassing internet servers, STUN relays, and cloud proxies.</li>
+        <li><strong>The Desktop Relay:</strong> Instead of relying on slow WebRTC Data Channels and complex ICE negotiations, the Desktop app hosts its own ultra-fast raw WebSocket relay server (`TcpListener`) over your local LAN, entirely dropping the overhead of Socket.io.</li>
+        <li><strong>Folder Selection (Tauri v2 API):</strong> To support native OS folder picking, we utilized Tauri's internal bridging layer (`__TAURI_INTERNALS__`) to flawlessly bypass standard browser sandboxes and open the native Windows file explorer directly from React.</li>
       </ul>
     </div>
 
@@ -190,6 +190,16 @@
         <li><strong>The Pivot:</strong> We completely abandoned mDNS.</li>
         <li><strong>QR Code Handshake:</strong> When the Desktop app starts, it fetches its true local IPv4 address (e.g., <code>192.168.1.50</code>) and generates a secure QR code.</li>
         <li><strong>Direct Connection:</strong> When you scan the QR code with your phone, the phone bypasses the VPN routing tables entirely by hitting the specific IP address and port directly, guaranteeing a 100% reliable connection every time.</li>
+      </ul>
+    </div>
+
+    <div class="policy-card">
+      <h2>4. Automated Support Pipeline</h2>
+      <p>ShareDaa features a highly secure, serverless bug reporting pipeline built directly into the web interface.</p>
+      <ul>
+        <li><strong>Discord Webhook Integration:</strong> Rather than maintaining a complex backend database, user bug reports (and file attachments) are automatically POSTed directly into a private Discord channel.</li>
+        <li><strong>Zero-Cloud Persistence:</strong> Because the pipeline uses Discord as a logging relay, no persistent database exists for hackers to inject SQL payloads into.</li>
+        <li><strong>Bot Countermeasures:</strong> The submission form utilizes a combination of invisible Honeypots (to catch automated crawlers), strict MIME type payload verification, and a 5-minute browser Cooldown limit (with UI shake animations) to completely eliminate spam while preserving a frictionless user experience.</li>
       </ul>
     </div>
   </div>
