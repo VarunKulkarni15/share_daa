@@ -168,6 +168,17 @@
       display: none;
       text-align: center;
     }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-5px); }
+      40%, 80% { transform: translateX(5px); }
+    }
+
+    .shake {
+      animation: shake 0.4s ease-in-out;
+      border-color: #DC2626 !important;
+    }
   </style>
 </head>
 
@@ -261,7 +272,11 @@
       // 2. COOLDOWN CHECK (1 report per 5 minutes per browser)
       const lastSubmit = localStorage.getItem('last_bug_report');
       if (lastSubmit && (Date.now() - parseInt(lastSubmit)) < 5 * 60 * 1000) {
-        showError("You're doing that too fast! Please wait a few minutes before submitting another report.");
+        showError("We've received your recent report! Please wait a few minutes before sending another one.");
+        const textBox = document.getElementById('bug-text');
+        textBox.classList.remove('shake');
+        void textBox.offsetWidth; // trigger reflow
+        textBox.classList.add('shake');
         return;
       }
 
