@@ -9,7 +9,6 @@
   [![React](https://img.shields.io/badge/Frontend-React-61DAFB?style=for-the-badge&logo=react&logoColor=black)](#)
   [![Rust](https://img.shields.io/badge/Backend-Rust-000000?style=for-the-badge&logo=rust&logoColor=white)](#)
   [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](#)
-  [![Downloads](https://img.shields.io/badge/Downloads-10k+-green?style=for-the-badge)](#)
 </div>
 
 <br />
@@ -51,6 +50,10 @@ Because ShareDaa is incredibly optimized, you can run it on almost anything.
 
 ## 📥 Installation
 
+**Microsoft Store:**
+[Insert your Microsoft Store Link Here]
+
+**Manual Installation:**
 1. Go to the [Releases](#) tab on this repository.
 2. Download the latest `ShareDaa_Setup.msi` file.
 3. Run the installer and launch the app!
