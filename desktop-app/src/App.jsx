@@ -25,7 +25,9 @@ const getFileIconSrc = (filename) => {
 const APP_VERSION = "1.0.0";
 
 function App() {
-  const [universalPin] = useState(() => Math.floor(1000 + Math.random() * 9000).toString());
+  const [universalPin, setUniversalPin] = useState(() => Math.floor(1000 + Math.random() * 9000).toString());
+  const universalPinRef = useRef(universalPin);
+  useEffect(() => { universalPinRef.current = universalPin; }, [universalPin]);
   const [isVPNActive, setIsVPNActive] = useState(false);
   const [localIp, setLocalIp] = useState('127.0.0.1');
   const [clientId] = useState(() => 'desktop-' + Math.random().toString(36).substr(2, 9));
@@ -228,7 +230,7 @@ function App() {
       }
 
       if (data.event === 'join-beam') {
-        if (String(data.payload.pin) !== String(universalPin)) {
+        if (String(data.payload.pin) !== String(universalPinRef.current)) {
           // Ignore it quietly. It might be meant for another desktop tab!
           return;
         }
@@ -529,6 +531,7 @@ function App() {
     isConnectedRef.current = false;
     sessionIdRef.current = null;
     setPinDigits(['', '', '', '']);
+    setUniversalPin(Math.floor(1000 + Math.random() * 9000).toString());
     showToast("Session ended.");
   };
 
@@ -690,7 +693,7 @@ function App() {
         .figma-card .badge { position: absolute; left: 50%; transform: translateX(-50%); top: 80%; width: clamp(80px, 13vw, 180px); height: clamp(20px, 2.5vw, 32px); border-radius: 7px; z-index: 1; }
         .badge-beam { background: #4D6948; }
         .badge-hub { background: #696151; }
-        .figma-card .subtitle { position: absolute; left: 0; right: 0; top: 80.7%; font-family: 'Cal Sans', sans-serif; font-weight: 400; font-size: clamp(10px, 1.2vw, 16px); line-height: 28px; letter-spacing: -0.5px; text-align: center; margin: 0; z-index: 2; display: flex; align-items: center; justify-content: center; }
+        .figma-card .subtitle { position: absolute; left: 0; right: 0; top: 80.7%; font-family: 'Cal Sans', sans-serif; font-weight: 400; font-size: clamp(10px, 1.2vw, 16px); line-height: 28px; letter-spacing: 0px; text-align: center; margin: 0; z-index: 2; display: flex; align-items: center; justify-content: center; }
         .subtitle-beam { color: #ACC7A4; }
         .subtitle-hub { color: #EAE2CA; }
 

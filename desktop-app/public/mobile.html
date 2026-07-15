@@ -1034,6 +1034,7 @@
     });
 
     socket.on('disconnect-beam', () => {
+      localStorage.removeItem('saved_pin');
       showLoadingScreen('Host ended the Beam.', true);
     });
 
@@ -1043,6 +1044,7 @@
 
     // ── Disconnect button ──
     document.getElementById('btn-disconnect').addEventListener('click', () => {
+      localStorage.removeItem('saved_pin');
       socket.emit('disconnect-beam');
       showLoadingScreen('Disconnected.', true);
     });

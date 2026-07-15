@@ -1,14 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ShareDaa - Report Issue</title>
-  
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
   <style>
     :root {
       --forest: #1E3528;
@@ -167,6 +170,7 @@
     }
   </style>
 </head>
+
 <body>
 
   <div class="container" id="form-container">
@@ -174,7 +178,7 @@
       <h1>Report Issue</h1>
       <a href="index.html" class="back-btn">Back to Home</a>
     </div>
-    
+
     <p>Describe the bug, feedback, or any other issue you've encountered. We'll look into it right away!</p>
 
     <!-- HONEYPOT FIELD (Invisible to humans, bots will fill this in and get blocked) -->
@@ -182,10 +186,16 @@
 
     <div class="error-msg" id="error-msg"></div>
 
-    <textarea id="bug-text" placeholder="What went wrong? Please be as detailed as possible..." maxlength="2000"></textarea>
+    <textarea id="bug-text" placeholder="What went wrong? Please be as detailed as possible..."
+      maxlength="2000"></textarea>
 
     <label class="file-upload">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path><path d="M12 12v9"></path><path d="m16 16-4-4-4 4"></path></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
+        <path d="M12 12v9"></path>
+        <path d="m16 16-4-4-4 4"></path>
+      </svg>
       <span id="file-label">Attach Screenshot (Optional)</span>
       <input type="file" id="file-input" accept="image/png, image/jpeg, image/gif, image/webp">
     </label>
@@ -196,7 +206,8 @@
   <div class="container success-msg" id="success-container">
     <h2>Thank You!</h2>
     <p>Your report has been successfully sent. We appreciate your feedback!</p>
-    <a href="index.html" class="submit-btn" style="text-decoration:none; display:block; box-sizing:border-box; text-align:center;">Return Home</a>
+    <a href="index.html" class="submit-btn"
+      style="text-decoration:none; display:block; box-sizing:border-box; text-align:center;">Return Home</a>
   </div>
 
   <script>
@@ -205,13 +216,13 @@
     const p2 = "1526626848795131945";
     const p3 = "/hRA3Cp4GGnLb7q_lV2Qn8Nr5-rvJhMfmqknw-rn_sxUMbRLvilHjUrjlRmaI2OnNkfkL";
     const WEBHOOK_URL = p1 + p2 + p3;
-    
+
     let selectedFile = null;
 
-    document.getElementById('file-input').addEventListener('change', function(e) {
+    document.getElementById('file-input').addEventListener('change', function (e) {
       if (e.target.files && e.target.files[0]) {
         const file = e.target.files[0];
-        
+
         // STRICT MIME TYPE CHECKING (Prevents malicious files masquerading as images)
         const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
         if (!validTypes.includes(file.type)) {
@@ -268,7 +279,7 @@
       try {
         const formData = new FormData();
         formData.append('content', `**New Bug Report / Feedback (Website)**\n\n${text}`);
-        
+
         if (selectedFile) {
           formData.append('file', selectedFile, 'screenshot.png');
         }
@@ -297,4 +308,5 @@
     }
   </script>
 </body>
+
 </html>
