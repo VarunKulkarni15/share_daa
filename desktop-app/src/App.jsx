@@ -234,14 +234,11 @@ function App() {
           // Ignore it quietly. It might be meant for another desktop tab!
           return;
         }
-        if (isConnectedRef.current) {
-          // Room is locked! We already have a partner.
-          socket.send(JSON.stringify({ event: 'join-error', payload: 'The host is already connected to another device.' }));
-          return;
-        }
+        // PIN matches! Accept the connection even if we think we are already connected 
+        // (this handles mobile app refreshes/reconnects seamlessly).
         isConnectedRef.current = true;
         setBeamState('connected');
-        sessionIdRef.current = 'session-' + Date.now();
+        if (!sessionIdRef.current) sessionIdRef.current = 'session-' + Date.now();
         socket.send(JSON.stringify({ event: 'join-success', payload: { sessionId: sessionIdRef.current, desktopName: settingsRef.current.deviceName } }));
         showToast("Device connected successfully!");
       } else if (data.event === 'join-success') {
@@ -1030,7 +1027,7 @@ function App() {
 
                     {/* DROP ZONE (Footer) */}
                     <div className="drop-zone" style={{ marginTop: '24px', height: '140px', background: isDragging ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.4)', transition: '0.2s', padding: '24px', flexDirection: 'row', gap: '24px' }}>
-                      <input type="file" multiple ref={fileInputRef} onChange={handleFileSelect} style={{ display: 'none' }} />
+                      <input type="file" multiple ref={fileInputRef} onChange={handleFileSelect} style={{ position: 'absolute', width: '1px', height: '1px', opacity: 0, overflow: 'hidden' }} />
                       <div style={{ flex: 1, textAlign: 'left' }}>
                         <div style={{ fontSize: '24px', fontWeight: 600 }}>Drop files here</div>
                         <div style={{ fontFamily: 'Inter', color: 'rgba(28,49,37,0.7)', marginTop: '4px', fontSize: '15px' }}>Drag multiple files to send them as a batch.</div>
@@ -1212,6 +1209,15 @@ function App() {
       </div>
 
 
+
+      {/* FULL SCREEN DRAG OVERLAY */}
+      {isDragging && beamState === 'connected' && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(28,49,37,0.85)', backdropFilter: 'blur(12px)', zIndex: 99999, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: 'white', pointerEvents: 'none' }}>
+          <UploadCloud size={100} style={{ marginBottom: '24px', color: 'var(--sage)' }} />
+          <h2 style={{ fontFamily: 'Instrument Serif', fontSize: '48px', margin: 0 }}>Drop Files Here</h2>
+          <p style={{ fontFamily: 'Inter', fontSize: '18px', opacity: 0.8, marginTop: '16px' }}>Release to stage files for sending</p>
+        </div>
+      )}
 
       {toastMessage && (
         <div className="fade-in" style={{ position: 'fixed', bottom: '32px', left: '50%', transform: 'translateX(-50%)', background: '#1C3125', color: 'white', padding: '16px 24px', borderRadius: '12px', fontWeight: 600, fontSize: '14px', boxShadow: '0 8px 24px rgba(0,0,0,0.2)', zIndex: 9999, fontFamily: 'Inter' }}>

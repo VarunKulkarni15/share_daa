@@ -1035,7 +1035,7 @@
 
     socket.on('disconnect-beam', () => {
       localStorage.removeItem('saved_pin');
-      showLoadingScreen('Host ended the Beam.', true);
+      showLoadingScreen('Session ended.', true);
     });
 
     socket.on('disconnect', () => {
@@ -1046,7 +1046,7 @@
     document.getElementById('btn-disconnect').addEventListener('click', () => {
       localStorage.removeItem('saved_pin');
       socket.emit('disconnect-beam');
-      showLoadingScreen('Disconnected.', true);
+      showLoadingScreen('Session ended.', true);
     });
 
     function handleTransferCancel(fileId) {
