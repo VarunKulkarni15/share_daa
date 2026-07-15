@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/varun-kulkarni-15/share_daa/main/desktop-app/public/icon-beam.png" alt="ShareDaa Logo" width="120" />
+  <img src="https://raw.githubusercontent.com/VarunKulkarni15/share_daa/main/desktop-app/src-tauri/icons/icon.png" alt="ShareDaa Logo" width="120" />
 
   # ⚡ ShareDaa
   
